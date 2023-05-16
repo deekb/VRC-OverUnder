@@ -1,10 +1,7 @@
-from __future__ import print_function
-import builtins as __builtin__
-import time
-import random
-from threading import Thread
-from pynput import keyboard
-from pynput.keyboard import Key
+"""
+This file is for Pycharm autocomplete only and has no functionality,
+it does NOT need to be uploaded to the robot or placed on the SD card
+"""
 
 SECONDS = "SECONDS"
 PERCENT = "PERCENT"
@@ -17,76 +14,37 @@ BRAKE = "BRAKE"
 HOLD = "HOLD"
 FORWARD = "FORWARD"
 REVERSE = "REVERSE"
-sleep = time.sleep
-pressed_keys = []
 
 
 class Competition:
-    def __init__(self, driver_control, autonomous):
-        self.competition_state = input('"d": driver control or "a": autonomous, add e/d to the end for enabled/disabled')
-        self.previous_competition_state = None
-        self.driver_control_function = driver_control
-        self.autonomous_function = autonomous
-        self.current_thread = None
-        self.current_thread_is_started = False
-        Thread(target=self.check_state_loop).start()
+    @staticmethod
+    def is_enabled():
+        return False
 
-    def check_state_loop(self):
-        while True:
-            wait(10, MSEC)
-            if is_pressed("e"):
-                self.competition_state = self.competition_state[0] + "e"
-            if is_pressed("d"):
-                self.competition_state = self.competition_state[0] + "d"
-            if is_pressed("m"):
-                self.competition_state = "d" + self.competition_state[1]
-            if is_pressed("c"):
-                self.competition_state = "a" + self.competition_state[1]
-            if self.competition_state != self.previous_competition_state:
-                if self.competition_state.endswith("e"):
-                    if self.competition_state.startswith("d"):
-                        self.current_thread = Thread(target=self.driver_control_function)
-                    elif self.competition_state.startswith("a"):
-                        self.current_thread = Thread(target=self.autonomous_function)
-                    if not self.current_thread_is_started:
-                        self.current_thread.start()
-                        self.current_thread_is_started = True
-                    print("Enabled")
-                else:
-                    if self.current_thread_is_started:
-                        del self.current_thread
-                        self.current_thread_is_started = False
-                    print("Disabled")
-                self.previous_competition_state = self.competition_state
+    @staticmethod
+    def is_autonomous():
+        return False
 
-    def is_enabled(self):
-        return self.competition_state.endswith("e")
-
-    def is_autonomous(self):
-        return self.competition_state.startswith("a")
-
-    def is_driver_control(self):
-        return self.competition_state.startswith("d")
+    @staticmethod
+    def is_driver_control():
+        return False
 
 
 class Inertial:
-    def __init__(self, Port):
-        print(f"[VEX_EM]:Gyro initialized on {Port}")
-
     @staticmethod
     def calibrate():
-        print("[VEX_EM]:Inertial calibrating")
-        time.sleep(1)
+        pass
 
     @staticmethod
-    def heading(self, *args):
-        return random.randint(-360, 360)
+    def heading(*args):
+        pass
 
     @staticmethod
     def is_calibrating():
         return False
 
-    def set_heading(self, *args):
+    @staticmethod
+    def set_heading(*args):
         pass
 
 
@@ -98,7 +56,7 @@ class Controller:
     class screen:
         @staticmethod
         def print(text):
-            __builtin__.print("[VEX_EM]:CONSOLE:CONTROLLER: " + text, end="")
+            pass
 
         @staticmethod
         def set_cursor(ROW, COLUMN):
@@ -106,15 +64,11 @@ class Controller:
 
         @staticmethod
         def next_row():
-            print("\n")
+            pass
 
         @staticmethod
         def clear_screen():
-            # command = 'clear'
-            # if os.name in ('nt', 'dos'):
-            #     command = 'cls'
-            # os.system(command)
-            __builtin__.print("[VEX_EM]:CONSOLE:CONTROLLER:CLEAR")
+            pass
 
         @staticmethod
         def clear_row(ROW=-1):
@@ -154,11 +108,11 @@ class Controller:
 
         @staticmethod
         def pressed(callback):
-            callback()
+            pass
 
         @staticmethod
         def released(callback):
-            callback()
+            pass
 
         @staticmethod
         def row():
@@ -170,8 +124,6 @@ class Controller:
 
         @staticmethod
         def pressing():
-            if random.randint(0, 1) == 1:
-                return True
             return False
 
         @staticmethod
@@ -189,24 +141,25 @@ class Controller:
     class buttonLeft:
         @staticmethod
         def pressing():
-            return is_pressed(Key.left)
+            return False
 
     class buttonRight:
         @staticmethod
         def pressing():
-            return is_pressed(Key.right)
+            return False
 
     class buttonA:
         @staticmethod
         def pressing():
-            return is_pressed("a")
+            return False
 
     class buttonB:
         @staticmethod
         def pressing():
-            return is_pressed("b")
+            return False
 
-    def rumble(self, param):
+    @staticmethod
+    def rumble(*args):
         pass
 
     class axis1:
@@ -234,13 +187,16 @@ class Motor:
     def __init__(self, Port, GearRatio, Inverted):
         pass
 
-    def spin(self, direction):
+    @staticmethod
+    def spin(direction):
         pass
 
-    def set_velocity(self, *args):
+    @staticmethod
+    def set_velocity(*args):
         pass
 
-    def velocity(self, *args):
+    @staticmethod
+    def velocity():
         return 0
 
 
@@ -258,7 +214,7 @@ class MotorGroup:
         pass
 
     @staticmethod
-    def position(self, *args):
+    def position(*args):
         return 0
 
     def stop(self):
@@ -381,7 +337,7 @@ class Brain:
     class screen:
         @staticmethod
         def print(text):
-            __builtin__.print("[VEX_EM]:CONSOLE:BRAIN: " + text, end="")
+            pass
 
         @staticmethod
         def set_cursor(ROW, COLUMN):
@@ -393,11 +349,7 @@ class Brain:
 
         @staticmethod
         def clear_screen():
-            # command = 'clear'
-            # if os.name in ('nt', 'dos'):
-            #     command = 'cls'
-            # os.system(command)
-            __builtin__.print("[VEX_EM]:CONSOLE:BrAIN:CLEAR")
+            pass
 
         @staticmethod
         def clear_row(ROW=-1):
@@ -440,8 +392,8 @@ class Brain:
             callback()
 
         @staticmethod
-        def released(callback):
-            callback()
+        def released(*args):
+            pass
 
         @staticmethod
         def row():
@@ -453,8 +405,6 @@ class Brain:
 
         @staticmethod
         def pressing():
-            if random.randint(0, 1) == 1:
-                return True
             return False
 
         @staticmethod
@@ -485,8 +435,7 @@ class Brain:
     class timer:
         @staticmethod
         def event(callback, timee):
-            time.sleep(timee * 1000)
-            callback()
+            pass
 
         @staticmethod
         def clear():
@@ -496,64 +445,6 @@ class Brain:
         def time(UNITS):
             pass
 
-    class Event:
-        @staticmethod
-        def broadcast():
-            pass
 
-        @staticmethod
-        def broadcast_and_wait():
-            pass
-
-        @staticmethod
-        def __call__(callback):
-            callback()
-
-        @staticmethod
-        def wait(_time):
-            time.sleep(_time)
-
-
-def wait(_time, _type=MSEC):
-    if _type == SECONDS:
-        time.sleep(_time)
-    elif _type == MSEC:
-        time.sleep(_time / 1000)
-
-
-def is_pressed(key):
-    global pressed_keys
-    return key in pressed_keys
-
-
-def on_press(key):
-    global pressed_keys
-    try:
-        if key.char in ("a", "b", "e", "d"):
-            pressed_keys.append(key.char)
-    except AttributeError:
-        if key == Key.left:
-            pressed_keys.append(key)
-        elif key == Key.right:
-            pressed_keys.append(key)
-
-
-def on_release(key):
-    global pressed_keys
-    try:
-        if key.char in pressed_keys:
-            pressed_keys.remove(key.char)
-    except BaseException:
-        if key in pressed_keys:
-            pressed_keys.remove(key)
-
-
-Brain.screen.print("Starting Up")
-Brain.screen.next_row()
-listener = keyboard.Listener(
-    on_press=on_press,
-    on_release=on_release)
-listener.start()
-Brain.screen.print("Started keyboard listener")
-Brain.screen.next_row()
-Brain.screen.clear_screen()
+def wait(*args):
+    pass
