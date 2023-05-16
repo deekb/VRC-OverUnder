@@ -36,12 +36,13 @@ class Motors:
     """
     A class containing references to all motors and motor groups attached to the robot including motors with custom PIDs
     """
+    # Drivetrain motors:
     # //---------------\\
-    # ||1             2||
+    # ||4             1||
     # ||       ^       ||
     # ||    Forward    ||
     # ||               ||
-    # ||4             3||
+    # ||3             2||
     # \\---------------//
     motor_1 = Motor(Ports.PORT1, GearSetting.RATIO_18_1, False)
     motor_2 = Motor(Ports.PORT2, GearSetting.RATIO_18_1, False)
@@ -94,6 +95,7 @@ def on_autonomous() -> None:
 def print_current_position():
     print("Position: " + str(drivetrain.odometry.get_position()))
     print("Direction: " + str(drivetrain.odometry.get_rotation_deg()))
+
 
 def on_driver() -> None:
     """
@@ -190,7 +192,7 @@ if __name__ == "__main__":
     Controllers.primary.rumble("-")
     clear(Controllers.primary)
     drivetrain = Drivetrain(inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
-                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, wheel_radius_mm=50, heading_allowed_error=1, track_width_cm={INSERT TRACK WIDTH})
+                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, wheel_radius_mm=50, heading_allowed_error=1, track_width_cm=Constants.track_width_cm)
     print("Calibrating Gyro...")
     Sensors.inertial.calibrate()
     while Sensors.inertial.is_calibrating():

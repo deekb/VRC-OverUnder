@@ -240,6 +240,9 @@ class Motor:
     def set_velocity(self, *args):
         pass
 
+    def velocity(self, *args):
+        return 0
+
 
 class MotorGroup:
     def __init__(self, *motors):
