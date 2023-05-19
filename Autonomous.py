@@ -1,6 +1,5 @@
-from vex import *
-from HelperFunctions import *
 from main import Motors, drivetrain, Globals
+from Utilities import *
 
 
 class Autonomous(object):

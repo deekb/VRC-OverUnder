@@ -69,7 +69,7 @@ class SlewLimit(object):
         """
         self.max_slew_rate = max_slew_rate_per_second
         self.previous_value = 0
-        self.previous_time = time.monotonic()
+        self.previous_time = brain.timer.time(SECONDS)
 
     def update(self, new_value):
         """
@@ -78,7 +78,7 @@ class SlewLimit(object):
         :return:
         """
         delta_value = new_value - self.previous_value
-        current_time = time.monotonic()
+        current_time = brain.timer.time(SECONDS)
         delta_time = current_time - self.previous_time
         self.previous_time = current_time
 
@@ -90,7 +90,7 @@ class SlewLimit(object):
 
     def set(self, new_value):
         self.previous_value = new_value
-        self.previous_time = time.monotonic()
+        self.previous_time = brain.timer.time(SECONDS)
 
 
 def apply_cubic(value: float, linearity: float) -> float:

@@ -7,6 +7,7 @@ SECONDS = "SECONDS"
 PERCENT = "PERCENT"
 DEGREES = "DEGREES"
 MSEC = "MSEC"
+VOLT = "VOLT"
 PRIMARY = "PRIMARY"
 PARTNER = "PARTNER"
 COAST = "COAST"
@@ -31,6 +32,10 @@ class Competition:
 
 
 class Inertial:
+
+    def __init__(self, Port):
+        pass
+
     @staticmethod
     def calibrate():
         pass
@@ -188,7 +193,19 @@ class Motor:
         pass
 
     @staticmethod
-    def spin(direction):
+    def spin(direction, voltage=10, unit=VOLT):
+        pass
+
+    @staticmethod
+    def spin_for(direction, degrees, unit=DEGREES):
+        pass
+
+    @staticmethod
+    def stop():
+        pass
+
+    @staticmethod
+    def set_position():
         pass
 
     @staticmethod
@@ -246,7 +263,9 @@ class Ports:
 
 
 class GearSetting:
+    RATIO_6_1 = "6 to 1"
     RATIO_18_1 = "18 to 1"
+    RATIO_36_1 = "36 to 1"
 
 
 class FontType:

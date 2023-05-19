@@ -6,15 +6,14 @@ Project homepage: <Project URL>
 Project archive: <Project URL>/archive/master.zip
 Contact Derek.m.baier@gmail.com for more information
 """
-from vex import *
 import Constants
+from vex import *
+from Utilities import *
 
 # If you get errors on any of the following imports it means that you
 # didn't copy their corresponding modules to the Micro-SD card in the Micro-SD slot on your VEX brain
 # if you do this, and it still doesn't want to upload click "Upload anyway"
-from Constants import *
-from HelperFunctions import *
-from Drivetrain import Drivetrain
+from XDrivetrain import Drivetrain
 from Autonomous import Autonomous
 
 __title__ = "Vex V5 2024 Competition code"
@@ -36,13 +35,12 @@ class Motors:
     """
     A class containing references to all motors and motor groups attached to the robot including motors with custom PIDs
     """
-    # Drivetrain motors:
     # //---------------\\
-    # ||4             1||
-    # ||       ^       ||
-    # ||    Forward    ||
+    # ||3             4||
     # ||               ||
-    # ||3             2||
+    # || Forward  >    ||
+    # ||               ||
+    # ||2             1||
     # \\---------------//
     motor_1 = Motor(Ports.PORT1, GearSetting.RATIO_18_1, False)
     motor_2 = Motor(Ports.PORT2, GearSetting.RATIO_18_1, False)
@@ -87,14 +85,15 @@ def on_autonomous() -> None:
     """
     # ensure setup is complete
     if not Globals.setup_complete:
-        print("[on_autonomous]: setup not complete, ignoring request")
+        print("[on_autonomous]: setup not complete, can't start autonomous")
         return
     Autonomous()
 
 
 def print_current_position():
-    print("Position: " + str(drivetrain.odometry.get_position()))
-    print("Direction: " + str(drivetrain.odometry.get_rotation_deg()))
+    # For debugging, ignore the protected member error
+    print("Position: " + str(drivetrain._odometry.get_position()))
+    print("Direction: " + str(drivetrain._odometry.get_rotation_deg()))
 
 
 def on_driver() -> None:
@@ -102,9 +101,9 @@ def on_driver() -> None:
     This is the function designated to run when the driver control portion of the program is triggered
     """
     # Wait for setup to be complete
-    print("[on_driver]: Waiting for setup")
+    print("[on_driver]: Waiting for setup...")
     while not Globals.setup_complete:
-        sleep(5)
+        wait(5)
     print("[on_driver]: Done")
     Motors.allWheels.spin(FORWARD)
     while True:
@@ -192,7 +191,7 @@ if __name__ == "__main__":
     Controllers.primary.rumble("-")
     clear(Controllers.primary)
     drivetrain = Drivetrain(inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
-                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, wheel_radius_mm=50, heading_allowed_error=1, track_width_cm=Constants.track_width_cm)
+                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, wheel_radius_cm=50, movement_allowed_error_cm=5, track_width_cm=Constants.track_width_cm)
     print("Calibrating Gyro...")
     Sensors.inertial.calibrate()
     while Sensors.inertial.is_calibrating():
