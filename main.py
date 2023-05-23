@@ -2,8 +2,8 @@
 Competition Code for VRC: Over-Under (2024-2025)
 Team: 3773P (Bowbots Phosphorus)
 Author: Derek Baier (deekb on GitHub)
-Project homepage: <Project URL>
-Project archive: <Project URL>/archive/master.zip
+Project homepage: https://github.com/deekb/VRC-OverUnder
+Project archive: https://github.com/deekb/VRC-OverUnder/archive/master.zip
 Contact Derek.m.baier@gmail.com for more information
 """
 import Constants
@@ -19,8 +19,8 @@ from Autonomous import Autonomous
 __title__ = "Vex V5 2024 Competition code"
 __description__ = "Competition Code for VRC: Over-Under 2024-2025"
 __team__ = "3773P (Bowbots Phosphorus)"
-__url__ = "<Project URL>"
-__download_url__ = "<Project URL>/archive/master.zip"
+__url__ = "https://github.com/deekb/VRC-OverUnder"
+__download_url__ = "https://github.com/deekb/VRC-OverUnder/archive/master.zip"
 __version__ = "0.0.1_rc"
 __author__ = "Derek Baier"
 __author_email__ = "Derek.m.baier@gmail.com"
