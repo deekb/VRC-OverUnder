@@ -56,6 +56,21 @@ def apply_deadzone(value: float, dead_zone: float, maximum: float) -> float:
                     maximum - dead_zone)  # Preserve a "live" zone of -maximum to maximum
 
 
+def check_position_within_tolerance(current_coordinates: tuple, target_coordinates: tuple, max_distance: float):
+    """
+    Checks whether two sets of coordinates are within a distance from each other
+    :param current_coordinates: The set of coordinates corresponding to the robot's position
+    :type current_coordinates: tuple[float | float]
+    :param target_coordinates: The set of coordinates corresponding to the target's position
+    :type target_coordinates: tuple[float | float]
+    :param max_distance: the maximum distance apart that should return True
+    """
+    current_x, current_y = current_coordinates
+    target_x, target_y = target_coordinates
+    distance = math.sqrt((current_y - target_y) ** 2 + (current_x - target_x) ** 2)
+    return distance <= max_distance
+
+
 class SlewLimit(object):
     """
     Limit the acceleration of a value with a slew limiter

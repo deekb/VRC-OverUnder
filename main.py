@@ -91,7 +91,7 @@ def on_autonomous() -> None:
 
 
 def print_current_position():
-    # For debugging, ignore the protected member error
+    # For testing, ignore the protected member error!
     print("Position: " + str(drivetrain._odometry.get_position()))
     print("Direction: " + str(drivetrain._odometry.get_rotation_deg()))
 

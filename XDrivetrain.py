@@ -4,7 +4,7 @@ A highly customizable drivetrain with built-in dynamic course correction
 import math
 
 from vex import *
-from Utilities import apply_deadzone, print, clamp
+from Utilities import apply_deadzone, print, clamp, check_position_within_tolerance
 from Odometry import XDriveDrivetrainOdometry
 
 
@@ -70,14 +70,8 @@ class Drivetrain(object):
         self.all_motors.spin(FORWARD)
         self.all_motors.set_velocity(0, PERCENT)
         self._odometry = XDriveDrivetrainOdometry(self._motor_1, self._motor_2, self._motor_3, self._motor_4,
-                                                  self._track_width, self._wheel_diameter_cm)
+                                                  self._track_width, self._wheel_circumference_cm)
         self._odometry_thread = Thread(self._odometry.auto_update_velocities, args=(motor_1, motor_2, motor_3, motor_4))
-
-    def check_position_within_tolerance(self, current_coordinates, target_coordinates):
-        current_x, current_y = current_coordinates
-        target_x, target_y = target_coordinates
-        distance = math.sqrt((current_y - target_y) ** 2 + (current_x - target_x) ** 2)
-        return distance <= self._movement_allowed_error
 
     def move_to_position(self, target_position) -> None:
         """
@@ -86,10 +80,10 @@ class Drivetrain(object):
         :type target_position: tuple[float, float]
         """
         self._current_target_x_cm, self._current_target_y_cm = target_position
-        while self.check_position_within_tolerance(self._odometry.position, target_position):
-            direction = math.atan2(self._current_target_y_cm - self._odometry.y, self._current_target_x_cm - self._odometry.x) * 180 / math.pi
-            distance = math.sqrt(((self._current_target_x_cm - self._odometry.x) ** 2 + (self._current_target_y_cm - self._odometry.y) ** 2))
-            self.move(direction, distance, 0)
+        while check_position_within_tolerance(self._odometry.position, target_position, self._movement_allowed_error):
+            direction_rad = math.atan2(self._current_target_y_cm - self._odometry.y, self._current_target_x_cm - self._odometry.x)
+            distance_cm = math.sqrt(((self._current_target_x_cm - self._odometry.x) ** 2 + (self._current_target_y_cm - self._odometry.y) ** 2))
+            self.move(direction_rad, distance_cm, 0)
 
     def move(self, direction, magnitude, spin):
         self._motor_1.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(-45)) + spin) * 100)

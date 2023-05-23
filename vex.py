@@ -1,6 +1,7 @@
 """
 This file is for Pycharm autocomplete only and has no functionality,
 it does NOT need to be uploaded to the robot or placed on the SD card
+it also does not need to be formatted correctly or error-free
 """
 
 SECONDS = "SECONDS"
@@ -18,6 +19,9 @@ REVERSE = "REVERSE"
 
 
 class Competition:
+    def __init__(self, *args):
+        pass
+
     @staticmethod
     def is_enabled():
         return False

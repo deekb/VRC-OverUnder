@@ -7,13 +7,13 @@ brain = Brain()
 # noinspection GrazieInspection
 class XDriveDrivetrainOdometry:
     # noinspection GrazieInspection
-    def __init__(self, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float, wheel_diameter_cm: float, starting_location: tuple = (0, 0, 0)):
+    def __init__(self, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float, wheel_circumference_cm: float, starting_location: tuple = (0, 0, 0)):
         """
         A class for tracking the robot's position and rotation based on an initial position and a constant stream of motor velocities
         This implementation only works on X-drive, but the concept is similar to the tank drive implementation
         :param starting_location: The initial position for the robot (x_position, y_position, heading_in_radians) defaults to (0, 0, 0)
         :param track_width_cm: The parallel distance in centimeters between the centers of the wheels (Your drivetrain is a square? RIGHT!)
-        :param wheel_diameter_cm: The diameter of the wheels, used to calculate the distance each wheel has travelled
+        :param wheel_circumference_cm: The circumference of the wheels, used to calculate the distance each wheel has travelled
         :param motor_1: Motor 1
         :type motor_1: Motor
         :param motor_2: Motor 2
@@ -25,8 +25,7 @@ class XDriveDrivetrainOdometry:
         """
         # Define the distance between wheels, in centimeters
         self._track_width = track_width_cm
-        self._cm_per_wheel_revolution = wheel_diameter_cm * math.pi
-        self._cm_per_wheel_degree = self._cm_per_wheel_revolution / 360
+        self._wheel_circumference_cm = wheel_circumference_cm
 
         # Define the initial conditions of the robot
         self._x_position, self._y_position, self._current_rotation_rad = starting_location
@@ -72,13 +71,13 @@ class XDriveDrivetrainOdometry:
         :param motor_4_rpm: Motor 4's speed in revolutions per second
         """
         if motor_1_rpm is not None:
-            self._wheel_1_speed_distance_per_second = motor_1_rpm / 60 * self._cm_per_wheel_revolution
+            self._wheel_1_speed_distance_per_second = motor_1_rpm / 60 * self._wheel_circumference_cm
         if motor_2_rpm is not None:
-            self._wheel_2_speed_distance_per_second = motor_2_rpm / 60 * self._cm_per_wheel_revolution
+            self._wheel_2_speed_distance_per_second = motor_2_rpm / 60 * self._wheel_circumference_cm
         if motor_3_rpm is not None:
-            self._wheel_3_speed_distance_per_second = motor_3_rpm / 60 * self._cm_per_wheel_revolution
+            self._wheel_3_speed_distance_per_second = motor_3_rpm / 60 * self._wheel_circumference_cm
         if motor_4_rpm is not None:
-            self._wheel_4_speed_distance_per_second = motor_3_rpm / 60 * self._cm_per_wheel_revolution
+            self._wheel_4_speed_distance_per_second = motor_3_rpm / 60 * self._wheel_circumference_cm
 
     def update_states(self, current_time):
         delta_time = current_time - self._previousTime
@@ -87,7 +86,7 @@ class XDriveDrivetrainOdometry:
         forward_backward_speed = (self._wheel_3_speed_distance_per_second - self._wheel_1_speed_distance_per_second) / 2
         left_right_speed = (self._wheel_2_speed_distance_per_second - self._wheel_4_speed_distance_per_second) / 2
         self._x_position += ((forward_backward_speed * math.cos(self._current_rotation_rad) + left_right_speed * math.sin(self._current_rotation_rad)) * delta_time)
-        self._y_position += ((left_right_speed * math.sin(self._current_rotation_rad + math.pi / 2) + forward_backward_speed * math.cos(self._current_rotation_rad + math.pi / 2)) * delta_time)
+        self._y_position += ((left_right_speed * math.cos(self._current_rotation_rad + math.pi / 4) + forward_backward_speed * math.cos(self._current_rotation_rad + math.pi / 2)) * delta_time)
 
     @property
     def x(self):
