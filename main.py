@@ -6,6 +6,8 @@ Project homepage: https://github.com/deekb/VRC-OverUnder
 Project archive: https://github.com/deekb/VRC-OverUnder/archive/master.zip
 Contact Derek.m.baier@gmail.com for more information
 """
+
+
 import Constants
 from vex import *
 from Utilities import *
@@ -14,7 +16,7 @@ from Utilities import *
 # didn't copy their corresponding modules to the Micro-SD card in the Micro-SD slot on your VEX brain
 # if you do this, and it still doesn't want to upload click "Upload anyway"
 from XDrivetrain import Drivetrain
-from Autonomous import Autonomous
+from Autonomous import Autonomous, available_autonomous_routines
 
 __title__ = "Vex V5 2024 Competition code"
 __description__ = "Competition Code for VRC: Over-Under 2024-2025"
@@ -36,11 +38,11 @@ class Motors:
     A class containing references to all motors and motor groups attached to the robot including motors with custom PIDs
     """
     # //---------------\\
-    # ||3             4||
+    # ||1             2||
     # ||               ||
     # || Forward  >    ||
     # ||               ||
-    # ||2             1||
+    # ||4             3||
     # \\---------------//
     motor_1 = Motor(Ports.PORT1, GearSetting.RATIO_18_1, False)
     motor_2 = Motor(Ports.PORT2, GearSetting.RATIO_18_1, False)
@@ -87,13 +89,13 @@ def on_autonomous() -> None:
     if not Globals.setup_complete:
         print("[on_autonomous]: setup not complete, can't start autonomous")
         return
-    Autonomous()
+    Autonomous(Motors, drivetrain, Globals)
 
 
 def print_current_position():
     # For testing, ignore the protected member error!
-    print("Position: " + str(drivetrain._odometry.get_position()))
-    print("Direction: " + str(drivetrain._odometry.get_rotation_deg()))
+    print("Position: " + str(drivetrain._odometry.x) + " " + str(drivetrain._odometry.y))
+    print("Direction: " + str(drivetrain._odometry.rotation_deg))
 
 
 def on_driver() -> None:
@@ -120,7 +122,6 @@ def autonomous_handler() -> None:
     """
     for _function in (on_autonomous,):
         Globals.autonomous_threads.append(Thread(_function))
-    Autonomous()
 
     print("Started autonomous")
     while competition.is_autonomous() and competition.is_enabled():
@@ -154,9 +155,9 @@ def select_autonomous() -> None:
     A setup function, selects the autonomous to execute using the controller
     """
     # This line grabs all non-hidden variables in the Constants.AutonomousTask class so that we can select one
-    possible_tasks = [(name, value) for name, value in vars(Autonomous).items() if not name.startswith("_")]
+    possible_tasks = available_autonomous_routines
     autonomous_index = 0
-    Globals.autonomous_task = possible_tasks[autonomous_index][1]
+    Globals.autonomous_task = possible_tasks[autonomous_index]
     while not Controllers.primary.buttonA.pressing():
         # Wait until all buttons are released
         while any((Controllers.primary.buttonLeft.pressing(),
@@ -170,10 +171,10 @@ def select_autonomous() -> None:
                        Controllers.primary.buttonB.pressing())):
             wait(5)
         autonomous_index = 0
-        Globals.autonomous_task = possible_tasks[autonomous_index][1]
+        Globals.autonomous_task = possible_tasks[autonomous_index]
 
         clear(Controllers.primary)
-        print(text=("Autonomous: " + Globals.autonomous_task), console=Controllers.primary)
+        print(text=("Autonomous: " + Globals.autonomous_task[0]), console=Controllers.primary)
         if Controllers.primary.buttonRight.pressing() and autonomous_index < len(possible_tasks):
             autonomous_index += 1
         elif Controllers.primary.buttonLeft.pressing() and autonomous_index > 0:
@@ -185,13 +186,13 @@ if __name__ == "__main__":
     print("Version: " + __version__)
     print("Author: " + __author__)
     print("Team: " + __team__)
-    select_autonomous()
+    # select_autonomous()
     print("Autonomous selected")
     Motors.allWheels.set_stopping(BRAKE)
     Controllers.primary.rumble("-")
     clear(Controllers.primary)
     drivetrain = Drivetrain(inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
-                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, wheel_radius_cm=50, movement_allowed_error_cm=5, track_width_cm=Constants.track_width_cm)
+                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, wheel_radius_cm=50, movement_allowed_error_cm=5, track_width_cm=Constants.track_width_cm, DEBUG=True)
     print("Calibrating Gyro...")
     Sensors.inertial.calibrate()
     while Sensors.inertial.is_calibrating():
@@ -204,6 +205,6 @@ if __name__ == "__main__":
     # Controllers.secondary.buttonA.pressed(callback)
     Controllers.primary.buttonA.pressed(print_current_position)
     Globals.setup_complete = True
-    print("Setup complete", (brain, Controllers.primary))
+    print("Setup complete", console=(brain, Controllers.primary), end="\n")
     Controllers.primary.rumble(".")
     Controllers.secondary.rumble(".")

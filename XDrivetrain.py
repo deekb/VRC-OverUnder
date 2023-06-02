@@ -7,6 +7,8 @@ from vex import *
 from Utilities import apply_deadzone, print, clamp, check_position_within_tolerance
 from Odometry import XDriveDrivetrainOdometry
 
+brain = Brain()
+
 
 class Drivetrain(object):
     """
@@ -53,7 +55,6 @@ class Drivetrain(object):
         self._motor_2 = motor_2
         self._motor_3 = motor_3
         self._motor_4 = motor_4
-        self.all_motors = MotorGroup(motor_1, motor_2, motor_3, motor_4)
         self._movement_allowed_error = movement_allowed_error_cm
         self._turn_aggression = turn_Kp
         self._wheel_radius_mm = wheel_radius_cm
@@ -67,11 +68,18 @@ class Drivetrain(object):
         self._current_target_x_cm = 0
         self._current_target_y_cm = 0
         self.DEBUG = DEBUG
-        self.all_motors.spin(FORWARD)
-        self.all_motors.set_velocity(0, PERCENT)
+        self._motor_1.set_velocity(0, PERCENT)
+        self._motor_2.set_velocity(0, PERCENT)
+        self._motor_3.set_velocity(0, PERCENT)
+        self._motor_4.set_velocity(0, PERCENT)
+        self._motor_1.spin(FORWARD)
+        self._motor_2.spin(FORWARD)
+        self._motor_3.spin(FORWARD)
+        self._motor_4.spin(FORWARD)
+
         self._odometry = XDriveDrivetrainOdometry(self._motor_1, self._motor_2, self._motor_3, self._motor_4,
                                                   self._track_width, self._wheel_circumference_cm)
-        self._odometry_thread = Thread(self._odometry.auto_update_velocities, args=(motor_1, motor_2, motor_3, motor_4))
+        self._odometry_thread = Thread(self._odometry.auto_update_velocities)
 
     def move_to_position(self, target_position) -> None:
         """
@@ -87,9 +95,9 @@ class Drivetrain(object):
 
     def move(self, direction, magnitude, spin):
         self._motor_1.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(-45)) + spin) * 100)
-        self._motor_2.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(-135)) + spin) * 100)
-        self._motor_3.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(225)) + spin) * 100)
-        self._motor_4.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(45)) + spin) * 100)
+        self._motor_2.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(45)) + spin) * 100)
+        self._motor_3.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(135)) + spin) * 100)
+        self._motor_4.set_velocity((self.calculate_wheel_power(direction, clamp(magnitude, 0, 1), math.radians(225)) + spin) * 100)
 
     def move_headless(self, direction, magnitude, spin):
         direction -= self._odometry.rotation_rad
@@ -111,25 +119,28 @@ class Drivetrain(object):
         left_y = apply_deadzone(left_stick["y"]() / 100, self._driver_control_deadzone, 1)
         right_x = apply_deadzone(right_stick["x"]() / 100, self._driver_control_deadzone, 1)
 
-        if left_x or left_y or right_x:  # If there is a nonzero value for inputs, then process them
-            direction = math.atan2(left_y, left_x)
-            magnitude = math.sqrt(left_x ** 2 + left_y ** 2)
-            if self.DEBUG:
-                print("Left stick angle: " + str(math.degrees(direction)))
-                print("Left stick magnitude: " + str(magnitude))
-            if headless:
-                self.move_headless(direction, magnitude, right_x)
-            else:
-                self.move(direction, magnitude, right_x)
+        direction = math.atan2(left_y, left_x)
+        magnitude = math.sqrt(left_x ** 2 + left_y ** 2)
+        if self.DEBUG:
+            print("Left stick angle: " + str(math.degrees(direction)))
+            print("Left stick magnitude: " + str(magnitude))
+        if headless:
+            self.move_headless(direction, magnitude, right_x)
         else:
-            wait(5)
+            self.move(direction, magnitude, right_x)
 
     def reset(self) -> None:
         """
         Reset all rolling aspects of the drivetrain
         """
-        self.all_motors.stop()
-        self.all_motors.set_velocity(0, PERCENT)
+        self._motor_1.set_velocity(0, PERCENT)
+        self._motor_2.set_velocity(0, PERCENT)
+        self._motor_3.set_velocity(0, PERCENT)
+        self._motor_4.set_velocity(0, PERCENT)
+        self._motor_1.spin(FORWARD)
+        self._motor_2.spin(FORWARD)
+        self._motor_3.spin(FORWARD)
+        self._motor_4.spin(FORWARD)
         self._inertial.set_heading(0, DEGREES)
         self._current_target_heading = 0
         self._current_target_x_cm = 0
@@ -188,4 +199,4 @@ class Drivetrain(object):
 
     @staticmethod
     def calculate_wheel_power(movement_angle_deg, movement_speed, wheel_angle_deg):
-        return movement_speed * math.cos(wheel_angle_deg + movement_angle_deg)
+        return movement_speed * math.sin(wheel_angle_deg + movement_angle_deg)

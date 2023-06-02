@@ -25,9 +25,10 @@ def print(text: str, console=(brain,), end: str = "\n"):
     :param text: the text to print to the screen
     :param end: The string to print at the end (defaults to new line)
     """
+    if isinstance(console, Brain):
+        console.screen.set_font(FontType.MONO12)
     if type(console) is tuple:
         for device in console:
-            device.screen.set_font(FontType.MONO12)
             device.screen.print(str(text))
             device.screen.print(str(end).replace("\n", ""))
             if "\n" in str(end):

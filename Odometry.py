@@ -41,8 +41,6 @@ class XDriveDrivetrainOdometry:
         self._auto_update = True
         self._auto_update_thread = Thread(self._auto_update)
 
-        self._motor_3.set_position()
-
     def reset(self):
         self._x_position = 0
         self._y_position = 0
@@ -82,11 +80,22 @@ class XDriveDrivetrainOdometry:
     def update_states(self, current_time):
         delta_time = current_time - self._previousTime
         self._previousTime = current_time
-        self._current_rotation_rad += (-(self._wheel_1_speed_distance_per_second + self._wheel_2_speed_distance_per_second + self._wheel_3_speed_distance_per_second + self._wheel_4_speed_distance_per_second) * delta_time / self._track_width)
-        forward_backward_speed = (self._wheel_3_speed_distance_per_second - self._wheel_1_speed_distance_per_second) / 2
-        left_right_speed = (self._wheel_2_speed_distance_per_second - self._wheel_4_speed_distance_per_second) / 2
-        self._x_position += ((forward_backward_speed * math.cos(self._current_rotation_rad) + left_right_speed * math.sin(self._current_rotation_rad)) * delta_time)
-        self._y_position += ((left_right_speed * math.cos(self._current_rotation_rad + math.pi / 4) + forward_backward_speed * math.cos(self._current_rotation_rad + math.pi / 2)) * delta_time)
+        self._current_rotation_rad += -(self._wheel_1_speed_distance_per_second +
+                                        self._wheel_2_speed_distance_per_second +
+                                        self._wheel_3_speed_distance_per_second +
+                                        self._wheel_4_speed_distance_per_second) / (self._track_width / 2) * delta_time
+        wheel_pair_1_and_3_speed_delta_x = math.cos(math.pi / 4 + self._current_rotation_rad) * (
+                    self._wheel_1_speed_distance_per_second - self._wheel_3_speed_distance_per_second) / 2
+        wheel_pair_1_and_3_speed_delta_y = math.sin(math.pi / 4 + self._current_rotation_rad) * (
+                    self._wheel_1_speed_distance_per_second - self._wheel_3_speed_distance_per_second) / 2
+        wheel_pair_2_and_4_speed_delta_x = math.cos(7 * math.pi / 4 + self._current_rotation_rad) * (
+                    self._wheel_2_speed_distance_per_second - self._wheel_4_speed_distance_per_second) / 2
+        wheel_pair_2_and_4_speed_delta_y = math.sin(7 * math.pi / 4 + self._current_rotation_rad) * (
+                    self._wheel_2_speed_distance_per_second - self._wheel_4_speed_distance_per_second) / 2
+
+        self._x_position += (wheel_pair_1_and_3_speed_delta_x + wheel_pair_2_and_4_speed_delta_x) * delta_time
+        self._y_position += (wheel_pair_1_and_3_speed_delta_y + wheel_pair_2_and_4_speed_delta_y) * delta_time
+
 
     @property
     def x(self):
@@ -139,9 +148,9 @@ class XDriveDrivetrainOdometry:
     def auto_update_velocities(self):
         while True:
             if self.auto_update:
-                self.update_states(brain.timer.time(SECONDS))
+                self.update_states(brain.timer.time(MSEC) / 1000)
                 self.set_velocities(self._motor_1.velocity(), self._motor_2.velocity(), self._motor_3.velocity(), self._motor_4.velocity())
             else:
                 self.set_velocities(0, 0, 0, 0)
-                self._previousTime = brain.timer.time(SECONDS)
+                self._previousTime = brain.timer.time(MSEC) / 1000
             wait(5)
