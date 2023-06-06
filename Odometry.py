@@ -1,13 +1,17 @@
+"""
+A class for tracking an X-Drive robot using the wheel speeds
+"""
+
 import math
 from vex import *
+
 
 brain = Brain()
 
 
-# noinspection GrazieInspection
 class XDriveDrivetrainOdometry:
     # noinspection GrazieInspection
-    def __init__(self, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float, wheel_circumference_cm: float, starting_location: tuple = (0, 0, 0)):
+    def __init__(self, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float, wheel_circumference_cm: float, starting_location: tuple = (0, 0, 0), auto_update: bool = True, gyroscope: Inertial = False):
         """
         A class for tracking the robot's position and rotation based on an initial position and a constant stream of motor velocities
         This implementation only works on X-drive, but the concept is similar to the tank drive implementation
@@ -38,10 +42,12 @@ class XDriveDrivetrainOdometry:
         self._wheel_3_speed_distance_per_second = 0
         self._wheel_4_speed_distance_per_second = 0
         self._previousTime = brain.timer.time(SECONDS)
-        self._auto_update = True
-        self._auto_update_thread = Thread(self._auto_update)
+        self._auto_update = auto_update
+        self._gyroscope = gyroscope
+        if self._auto_update:
+            self._auto_update_thread = Thread(self.auto_update_velocities)
 
-    def reset(self):
+    def reset(self) -> None:
         self._x_position = 0
         self._y_position = 0
         self._current_rotation_rad = 0
@@ -52,15 +58,15 @@ class XDriveDrivetrainOdometry:
         self._wheel_4_speed_distance_per_second = 0
 
     def set_velocities(self, motor_1_rpm: float = None, motor_2_rpm: float = None, motor_3_rpm: float = None,
-                       motor_4_rpm: float = None):
+                       motor_4_rpm: float = None) -> None:
         """
         Drivetrain motors:
         //---------------\\
-        ||3             4||
+        ||1             2||
         ||               ||
         || Forward  >    ||
         ||               ||
-        ||2             1||
+        ||4             3||
         \\---------------//
         Updates the algorithm with the current wheel speeds
         :param motor_1_rpm: Motor 1's speed in revolutions per second
@@ -75,77 +81,131 @@ class XDriveDrivetrainOdometry:
         if motor_3_rpm is not None:
             self._wheel_3_speed_distance_per_second = motor_3_rpm / 60 * self._wheel_circumference_cm
         if motor_4_rpm is not None:
-            self._wheel_4_speed_distance_per_second = motor_3_rpm / 60 * self._wheel_circumference_cm
+            self._wheel_4_speed_distance_per_second = motor_4_rpm / 60 * self._wheel_circumference_cm
 
-    def update_states(self, current_time):
+    def update_states(self, current_time) -> None:
         delta_time = current_time - self._previousTime
         self._previousTime = current_time
-        self._current_rotation_rad += -(self._wheel_1_speed_distance_per_second +
-                                        self._wheel_2_speed_distance_per_second +
-                                        self._wheel_3_speed_distance_per_second +
-                                        self._wheel_4_speed_distance_per_second) / (self._track_width / 2) * delta_time
+        if self._gyroscope:
+            self._current_rotation_rad = math.radians(self._gyroscope.heading(DEGREES))
+        else:
+            self._current_rotation_rad += ((-(self._wheel_1_speed_distance_per_second +
+                                            self._wheel_2_speed_distance_per_second +
+                                            self._wheel_3_speed_distance_per_second +
+                                            self._wheel_4_speed_distance_per_second) / self._track_width) / 2) * delta_time
+
         wheel_pair_1_and_3_speed_delta_x = math.cos(math.pi / 4 + self._current_rotation_rad) * (
                     self._wheel_1_speed_distance_per_second - self._wheel_3_speed_distance_per_second) / 2
         wheel_pair_1_and_3_speed_delta_y = math.sin(math.pi / 4 + self._current_rotation_rad) * (
                     self._wheel_1_speed_distance_per_second - self._wheel_3_speed_distance_per_second) / 2
-        wheel_pair_2_and_4_speed_delta_x = math.cos(7 * math.pi / 4 + self._current_rotation_rad) * (
+        wheel_pair_2_and_4_speed_delta_x = math.cos(-math.pi / 4 + self._current_rotation_rad) * (
                     self._wheel_2_speed_distance_per_second - self._wheel_4_speed_distance_per_second) / 2
-        wheel_pair_2_and_4_speed_delta_y = math.sin(7 * math.pi / 4 + self._current_rotation_rad) * (
+        wheel_pair_2_and_4_speed_delta_y = math.sin(-math.pi / 4 + self._current_rotation_rad) * (
                     self._wheel_2_speed_distance_per_second - self._wheel_4_speed_distance_per_second) / 2
 
         self._x_position += (wheel_pair_1_and_3_speed_delta_x + wheel_pair_2_and_4_speed_delta_x) * delta_time
         self._y_position += (wheel_pair_1_and_3_speed_delta_y + wheel_pair_2_and_4_speed_delta_y) * delta_time
 
-
     @property
-    def x(self):
+    def x(self) -> float:
+        """
+        Get the robot's current x position
+        """
         return self._x_position
     
     @x.setter
-    def x(self, x_position):
+    def x(self, x_position) -> None:
+        """
+        Set the robot's current x position
+        :param x_position: The new x position
+        """
         self._x_position = x_position
     
     @property
-    def y(self):
+    def y(self) -> float:
+        """
+        Get the robot's current y position
+        """
         return self._y_position
     
     @y.setter
-    def y(self, y_position):
+    def y(self, y_position) -> None:
+        """
+        Set the robot's current y position
+        :param y_position: The new y position
+        """
         self._y_position = y_position
 
     @property
-    def rotation_deg(self):
+    def rotation_deg(self) -> float:
+        """
+        Get the robot's current rotation in degrees
+        """
         return math.degrees(self._current_rotation_rad)
 
     @rotation_deg.setter
-    def rotation_deg(self, rotation_degrees):
+    def rotation_deg(self, rotation_degrees) -> None:
+        """
+        Set the robot's current rotation in degrees
+        :param rotation_degrees: The new rotation
+        """
         self._current_rotation_rad = math.radians(rotation_degrees)
     
     @property
-    def rotation_rad(self):
+    def rotation_rad(self) -> float:
+        """
+        Get the robot's current rotation in radians
+        """
         return self._current_rotation_rad
     
     @rotation_rad.setter
-    def rotation_rad(self, rotation_radians):
+    def rotation_rad(self, rotation_radians) -> None:
+        """
+        Set the robot's current rotation in radians
+        :param rotation_radians: The new rotation
+        """
         self._current_rotation_rad = rotation_radians
     
     @property
-    def position(self):
+    def position(self) -> tuple:
+        """
+        Get the robot's current (x, y) position
+        :rtype: tuple[float, float]
+        """
         return self._x_position, self._y_position
     
     @position.setter
-    def position(self, coordinates):
+    def position(self, coordinates) -> None:
+        """
+        Set the robot's current (x, y) position
+        :param coordinates: The new position
+        """
         self._x_position, self._y_position = coordinates
         
     @property
-    def auto_update(self):
+    def auto_update(self) -> bool:
+        """
+        Get the odometry's auto-update state
+        """
         return self._auto_update
 
     @auto_update.setter
-    def auto_update(self, value):
+    def auto_update(self, value) -> None:
+        """
+        Set the odometry's auto-update state
+        :param value: The new state
+        """
         self._auto_update = value
+        if self._auto_update:
+            if not self._auto_update_thread.isrunning():
+                self._auto_update_thread = Thread(self._auto_update)
+        else:
+            self._auto_update_thread.stop()
 
-    def auto_update_velocities(self):
+    def auto_update_velocities(self) -> None:
+        """
+        Used internally to constantly update the wheel states, do not call from outside this class
+        """
         while True:
             if self.auto_update:
                 self.update_states(brain.timer.time(MSEC) / 1000)

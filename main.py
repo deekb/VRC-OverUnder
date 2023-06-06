@@ -7,28 +7,39 @@ Project archive: https://github.com/deekb/VRC-OverUnder/archive/master.zip
 Contact Derek.m.baier@gmail.com for more information
 """
 
-
-import Constants
 from vex import *
-from Utilities import *
+
+brain = Brain()
+
 
 # If you get errors on any of the following imports it means that you
 # didn't copy their corresponding modules to the Micro-SD card in the Micro-SD slot on your VEX brain
 # if you do this, and it still doesn't want to upload click "Upload anyway"
-from XDrivetrain import Drivetrain
-from Autonomous import Autonomous, available_autonomous_routines
+while True:
+    try:
+        import Constants
+        from Utilities import *
+        from XDrivetrain import Drivetrain
+        from Autonomous import Autonomous, available_autonomous_routines
+        break
+    except ModuleNotFoundError:
+        brain.screen.print("Please insert the library SD card")
+        brain.screen.next_row()
+        wait(100)
+
+print("4 modules loaded successfully")
 
 __title__ = "Vex V5 2024 Competition code"
 __description__ = "Competition Code for VRC: Over-Under 2024-2025"
 __team__ = "3773P (Bowbots Phosphorus)"
 __url__ = "https://github.com/deekb/VRC-OverUnder"
 __download_url__ = "https://github.com/deekb/VRC-OverUnder/archive/master.zip"
-__version__ = "0.0.1_rc"
+__version__ = "0.0.2_rc"
 __author__ = "Derek Baier"
 __author_email__ = "Derek.m.baier@gmail.com"
 __license__ = "MIT"
 
-brain = Brain()
+
 if Constants.background_image_path:
     brain.screen.draw_image_from_file(str(Constants.background_image_path), 0, 0)
 
@@ -89,13 +100,21 @@ def on_autonomous() -> None:
     if not Globals.setup_complete:
         print("[on_autonomous]: setup not complete, can't start autonomous")
         return
-    Autonomous(Motors, drivetrain, Globals)
+    Autonomous(motors=Motors, drivetrain=drivetrain, _globals=Globals, verbosity=Constants.autonomous_verbosity)
 
 
-def print_current_position():
-    # For testing, ignore the protected member error!
-    print("Position: " + str(drivetrain._odometry.x) + " " + str(drivetrain._odometry.y))
-    print("Direction: " + str(drivetrain._odometry.rotation_deg))
+def debug_thread():
+    while True:
+        if "drivetrain" in globals():
+            # For testing, ignore the protected member error!
+            clear()
+            print("Position: " + str(drivetrain._odometry.x) + " " + str(drivetrain._odometry.y))
+            print("Direction: " + str(drivetrain._odometry.rotation_deg))
+            wait(100)
+            if Controllers.primary.buttonA.pressing():
+                drivetrain.reset()
+            if Controllers.primary.buttonB.pressing():
+                drivetrain.move_to_position((0, 0))
 
 
 def on_driver() -> None:
@@ -110,7 +129,7 @@ def on_driver() -> None:
     Motors.allWheels.spin(FORWARD)
     while True:
         if not Globals.pause_driver_control:
-            drivetrain.move_with_controller(Controllers.primary)
+            drivetrain.move_with_controller(Controllers.primary, headless=Constants.headless)
         else:
             wait(10)
 
@@ -118,7 +137,7 @@ def on_driver() -> None:
 # <editor-fold desc="Competition State Handlers">
 def autonomous_handler() -> None:
     """
-    Coordinate when to run the autonomous function(s) using the vex competition library to read the game state.
+    Coordinate when to run the autonomous function(s)
     """
     for _function in (on_autonomous,):
         Globals.autonomous_threads.append(Thread(_function))
@@ -132,9 +151,9 @@ def autonomous_handler() -> None:
 
 def driver_handler() -> None:
     """
-    Coordinate when to run the driver function(s) using the vex competition library to read the game state.
+    Coordinate when to run the driver function(s)
     """
-    for _function in (on_driver,):
+    for _function in (on_driver, debug_thread):
         Globals.driver_control_threads.append(Thread(_function))
     print("Started driver control")
     while competition.is_driver_control() and competition.is_enabled():
@@ -152,9 +171,8 @@ competition = Competition(driver_handler, autonomous_handler)
 
 def select_autonomous() -> None:
     """
-    A setup function, selects the autonomous to execute using the controller
+    Selects which autonomous to execute using the controller
     """
-    # This line grabs all non-hidden variables in the Constants.AutonomousTask class so that we can select one
     possible_tasks = available_autonomous_routines
     autonomous_index = 0
     Globals.autonomous_task = possible_tasks[autonomous_index]
@@ -186,13 +204,14 @@ if __name__ == "__main__":
     print("Version: " + __version__)
     print("Author: " + __author__)
     print("Team: " + __team__)
-    # select_autonomous()
+    select_autonomous()
     print("Autonomous selected")
     Motors.allWheels.set_stopping(BRAKE)
     Controllers.primary.rumble("-")
     clear(Controllers.primary)
     drivetrain = Drivetrain(inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
-                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, wheel_radius_cm=50, movement_allowed_error_cm=5, track_width_cm=Constants.track_width_cm, DEBUG=True)
+                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, movement_allowed_error_cm=3,
+                            wheel_radius_cm=4.13, track_width_cm=Constants.track_width_cm)
     print("Calibrating Gyro...")
     Sensors.inertial.calibrate()
     while Sensors.inertial.is_calibrating():
@@ -203,8 +222,7 @@ if __name__ == "__main__":
     # Controllers.primary.buttonA.pressed(callback)
     # Secondary controller bindings
     # Controllers.secondary.buttonA.pressed(callback)
-    Controllers.primary.buttonA.pressed(print_current_position)
+    Controllers.primary.buttonA.pressed(debug_thread)
     Globals.setup_complete = True
     print("Setup complete", console=(brain, Controllers.primary), end="\n")
     Controllers.primary.rumble(".")
-    Controllers.secondary.rumble(".")

@@ -7,7 +7,7 @@ speed_curve_linearity = 0.35
 autonomous_verbosity = 2  # 0-2, 0: nothing, 1: logging, 2: logging & printing
 background_image_path = None  # Set this to the name of a bitmap (BMP) image (480 x 240) on the sd card to display it as the background or None to disable
 headless = True
-track_width_cm = 100
+track_width_cm = 26
 
 
 class Color(object):
@@ -17,13 +17,3 @@ class Color(object):
     red = 0
     green = 1
     blue = 2
-
-
-class AutonomousTask(object):
-    """
-    All autonomous tasks, this class contains constants for checking the name of the currently selected autonomous,
-    to add an entry, create a new class variable of it's name and set it's content to a human-readable version of it's name
-    """
-    skills = "Skills"
-    do_nothing = "Nothing"
-    drivetrain_test = "Drivetrain Test"

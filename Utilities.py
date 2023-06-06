@@ -25,21 +25,17 @@ def print(text: str, console=(brain,), end: str = "\n"):
     :param text: the text to print to the screen
     :param end: The string to print at the end (defaults to new line)
     """
-    if isinstance(console, Brain):
-        console.screen.set_font(FontType.MONO12)
-    if type(console) is tuple:
+    if isinstance(console, tuple):
         for device in console:
             device.screen.print(str(text))
             device.screen.print(str(end).replace("\n", ""))
             if "\n" in str(end):
                 device.screen.next_row()
     else:
-        console.screen.set_font(FontType.MONO12)
         console.screen.print(str(text))
-        if end == "\n":
+        console.screen.print(str(end).replace("\n", ""))
+        if "\n" in str(end):
             console.screen.next_row()
-        else:
-            console.screen.print(str(end))
 
 
 def apply_deadzone(value: float, dead_zone: float, maximum: float) -> float:
@@ -47,14 +43,12 @@ def apply_deadzone(value: float, dead_zone: float, maximum: float) -> float:
     Apply a dead_zone to the passed value
     :param maximum: The maximum value for the input, helps to smooth out the returned values when the value is outside the dead zone
     :param value: The value to apply a deadzone to
-    :param dead_zone: The lowest value for the function to consider "alive"
-    :returns: The value with a dead_zone applied
+    :param dead_zone: The lowest value that should have a nonzero output
     """
     if abs(value) < dead_zone:
         return 0
     else:
-        return (value - math.copysign(dead_zone, value)) * maximum / (
-                    maximum - dead_zone)  # Preserve a "live" zone of -maximum to maximum
+        return maximum / (maximum - dead_zone) * (value - dead_zone)
 
 
 def check_position_within_tolerance(current_coordinates: tuple, target_coordinates: tuple, max_distance: float):
