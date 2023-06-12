@@ -18,6 +18,9 @@ FORWARD = "FORWARD"
 REVERSE = "REVERSE"
 
 
+def Thread(*args):
+    pass
+
 class Competition:
     def __init__(self, *args):
         pass
@@ -152,20 +155,32 @@ class Controller:
         def pressing():
             return False
 
+        def pressed(*args):
+            pass
+
     class buttonRight:
         @staticmethod
         def pressing():
             return False
+
+        def pressed(*args):
+            pass
 
     class buttonA:
         @staticmethod
         def pressing():
             return False
 
+        def pressed(*args):
+            pass
+
     class buttonB:
         @staticmethod
         def pressing():
             return False
+
+        def pressed(*args):
+            pass
 
     @staticmethod
     def rumble(*args):

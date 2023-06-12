@@ -1,41 +1,28 @@
 import math
 from vex import *
 
-brain = Brain()
 
+class Terminal(object):
+    def __init__(self, brain):
+        self.brain = brain
 
-def clear(console=(brain,)):
-    """
-    Clears a console
-    :param console: The console to clear (brain, controller1, controller2, or tuple with any combination)
-    """
-    if type(console) is tuple:
-        for device in console:
-            device.screen.clear_screen()
-            device.screen.set_cursor(1, 1)
-    else:
-        console.screen.clear_screen()
-        console.screen.set_cursor(1, 1)
+    def clear(self):
+        """
+        Clears the brain screen
+        """
+        self.brain.screen.clear_screen()
+        self.brain.screen.set_cursor(1, 1)
 
-
-def print(text: str, console=(brain,), end: str = "\n"):
-    """
-    Prints a string to a console
-    :param console: The console to print to (brain, controller1, controller2, or tuple with any combination)
-    :param text: the text to print to the screen
-    :param end: The string to print at the end (defaults to new line)
-    """
-    if isinstance(console, tuple):
-        for device in console:
-            device.screen.print(str(text))
-            device.screen.print(str(end).replace("\n", ""))
-            if "\n" in str(end):
-                device.screen.next_row()
-    else:
-        console.screen.print(str(text))
-        console.screen.print(str(end).replace("\n", ""))
-        if "\n" in str(end):
-            console.screen.next_row()
+    def print(self, text: str, end: str = "\n"):
+        """
+        Prints a string to a console
+        :param text: the text to print to the screen
+        :param end: The string to print at the end (defaults to new line)
+        """
+        self.brain.screen.print(str(text))
+        self.brain.screen.print(str(end).replace("\n", ""))
+        if str(end).startswith("\n"):
+            self.brain.screen.next_row()
 
 
 def apply_deadzone(value: float, dead_zone: float, maximum: float) -> float:
@@ -64,43 +51,6 @@ def check_position_within_tolerance(current_coordinates: tuple, target_coordinat
     target_x, target_y = target_coordinates
     distance = math.sqrt((current_y - target_y) ** 2 + (current_x - target_x) ** 2)
     return distance <= max_distance
-
-
-class SlewLimit(object):
-    """
-    Limit the acceleration of a value with a slew limiter
-    """
-
-    def __init__(self, max_slew_rate_per_second):
-        """
-        Initialize a new slew limiter with the specified maximum rate
-        :param max_slew_rate_per_second: The maximum rate of acceleration in one second, every time the "update" method is called the value is allowed to increase or decrease by a maximum of this value times the delta time
-        :type max_slew_rate_per_second: float
-        """
-        self.max_slew_rate = max_slew_rate_per_second
-        self.previous_value = 0
-        self.previous_time = brain.timer.time(SECONDS)
-
-    def update(self, new_value):
-        """
-        Update the slew function with the most recent speed value
-        :param new_value:
-        :return:
-        """
-        delta_value = new_value - self.previous_value
-        current_time = brain.timer.time(SECONDS)
-        delta_time = current_time - self.previous_time
-        self.previous_time = current_time
-
-        if abs(delta_value) > self.max_slew_rate * delta_time:
-            self.previous_value += self.max_slew_rate * delta_time * (delta_value / abs(delta_value))
-        else:
-            self.previous_value = new_value
-        return self.previous_value
-
-    def set(self, new_value):
-        self.previous_value = new_value
-        self.previous_time = brain.timer.time(SECONDS)
 
 
 def apply_cubic(value: float, linearity: float) -> float:
@@ -214,8 +164,6 @@ class Logging(object):
         """
         temp = self.log_format
         temp = temp.replace("%s", str(string))
-        temp = temp.replace("%t", str(brain.timer.time(SECONDS)))
-        temp = temp.replace("%m", str(brain.timer.time(MSEC)))
         temp = temp.replace("%n", str(function_name))
         self.file_object.write(temp)
 

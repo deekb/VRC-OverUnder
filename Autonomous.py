@@ -2,7 +2,15 @@ from Utilities import *
 
 
 class Autonomous(object):
-    def __init__(self, motors, drivetrain, _globals, verbosity) -> None:
+    """
+    This class is used to manage the execution of an autonomous routine
+    """
+    def __init__(self, brain, motors, drivetrain, _globals, verbosity) -> None:
+        self.time = brain.timer
+        self.terminal = Terminal(brain)
+        self.print = self.terminal.print
+        self.clear = self.terminal.clear
+
         self.verbosity = verbosity
         self.motors = motors
         self.drivetrain = drivetrain
@@ -30,6 +38,7 @@ class Autonomous(object):
 
     def skills(self):
         def __init__(self) -> None:
+            self.test = "g"
             self.log("Starting skills")
             wait(1000)
             self.log("Done")

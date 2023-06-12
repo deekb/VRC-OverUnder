@@ -1,13 +1,10 @@
 """
 A highly customizable drivetrain with built-in dynamic course correction
 """
-import math
 
 from vex import *
-from Utilities import apply_deadzone, print, clear, clamp, check_position_within_tolerance
+from Utilities import *
 from Odometry import XDriveDrivetrainOdometry
-
-brain = Brain()
 
 
 class Drivetrain(object):
@@ -16,7 +13,7 @@ class Drivetrain(object):
     """
 
     # noinspection GrazieInspection
-    def __init__(self, inertial: Inertial, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor,
+    def __init__(self, brain, inertial: Inertial, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor,
                  movement_allowed_error_cm: float, wheel_radius_cm: float,
                  track_width_cm: float, motor_lowest_speed: int = 1,
                  driver_control_linearity: float = 0.45, driver_control_deadzone: float = 0.1) -> None:
@@ -44,9 +41,12 @@ class Drivetrain(object):
         :type driver_control_linearity: float
         :param driver_control_deadzone: The minimum value from the controller that should be treated as alive (Nonzero), 0.0-1.0, with 0.0 being no deadzone
         :type driver_control_deadzone: float
-        :param DEBUG: Whether to print debugging information (slows down the program)
-        :type DEBUG: bool
         """
+        self.time = brain.timer
+        self.terminal = Terminal(brain)
+        self.print = self.terminal.print
+        self.clear = self.terminal.clear
+
         self._inertial = inertial
         self._motor_1 = motor_1
         self._motor_2 = motor_2
@@ -72,7 +72,7 @@ class Drivetrain(object):
         self._motor_3.spin(FORWARD)
         self._motor_4.spin(FORWARD)
 
-        self._odometry = XDriveDrivetrainOdometry(self._motor_1, self._motor_2, self._motor_3, self._motor_4,
+        self._odometry = XDriveDrivetrainOdometry(brain, self._motor_1, self._motor_2, self._motor_3, self._motor_4,
                                                   self._track_width, self._wheel_circumference_cm)
         self._odometry_thread = Thread(self._odometry.auto_update_velocities)
 

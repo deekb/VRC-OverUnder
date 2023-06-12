@@ -4,14 +4,12 @@ A class for tracking an X-Drive robot using the wheel speeds
 
 import math
 from vex import *
-
-
-brain = Brain()
+from Utilities import *
 
 
 class XDriveDrivetrainOdometry:
     # noinspection GrazieInspection
-    def __init__(self, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float, wheel_circumference_cm: float, starting_location: tuple = (0, 0, 0), auto_update: bool = True, gyroscope: Inertial = False):
+    def __init__(self, brain, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float, wheel_circumference_cm: float, starting_location: tuple = (0, 0, 0), auto_update: bool = True, gyroscope: Inertial = False):
         """
         A class for tracking the robot's position and rotation based on an initial position and a constant stream of motor velocities
         This implementation only works on X-drive, but the concept is similar to the tank drive implementation
@@ -27,6 +25,11 @@ class XDriveDrivetrainOdometry:
         :param motor_4: Motor 4
         :type motor_4: Motor
         """
+        self.timer = brain.timer
+        self.terminal = Terminal(brain)
+        self.print = self.terminal.print
+        self.clear = self.terminal.clear
+
         # Define the distance between wheels, in centimeters
         self._track_width = track_width_cm
         self._wheel_circumference_cm = wheel_circumference_cm
@@ -51,7 +54,7 @@ class XDriveDrivetrainOdometry:
         self._x_position = 0
         self._y_position = 0
         self._current_rotation_rad = 0
-        self._previousTime = brain.timer.time(SECONDS)
+        self._previousTime = self.timer.time(SECONDS)
         self._wheel_1_speed_distance_per_second = 0
         self._wheel_2_speed_distance_per_second = 0
         self._wheel_3_speed_distance_per_second = 0
@@ -90,9 +93,9 @@ class XDriveDrivetrainOdometry:
             self._current_rotation_rad = math.radians(self._gyroscope.heading(DEGREES))
         else:
             self._current_rotation_rad += ((-(self._wheel_1_speed_distance_per_second +
-                                            self._wheel_2_speed_distance_per_second +
-                                            self._wheel_3_speed_distance_per_second +
-                                            self._wheel_4_speed_distance_per_second) / self._track_width) / 2) * delta_time
+                                              self._wheel_2_speed_distance_per_second +
+                                              self._wheel_3_speed_distance_per_second +
+                                              self._wheel_4_speed_distance_per_second) / self._track_width) / 2) * delta_time
 
         wheel_pair_1_and_3_speed_delta_x = math.cos(math.pi / 4 + self._current_rotation_rad) * (
                     self._wheel_1_speed_distance_per_second - self._wheel_3_speed_distance_per_second) / 2
@@ -208,9 +211,9 @@ class XDriveDrivetrainOdometry:
         """
         while True:
             if self.auto_update:
-                self.update_states(brain.timer.time(MSEC) / 1000)
+                self.update_states(self.timer.time(MSEC) / 1000)
                 self.set_velocities(self._motor_1.velocity(), self._motor_2.velocity(), self._motor_3.velocity(), self._motor_4.velocity())
             else:
                 self.set_velocities(0, 0, 0, 0)
-                self._previousTime = brain.timer.time(MSEC) / 1000
+                self._previousTime = self.timer.time(MSEC) / 1000
             wait(5)

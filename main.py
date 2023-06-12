@@ -12,22 +12,25 @@ from vex import *
 brain = Brain()
 
 
-# If you get errors on any of the following imports it means that you
-# didn't copy their corresponding modules to the Micro-SD card in the Micro-SD slot on your VEX brain
-# if you do this, and it still doesn't want to upload click "Upload anyway"
+# Make sure to copy the required modules to the Micro-SD card in the Micro-SD slot on your VEX brain
+# if Vex-code still doesn't want to upload click "Upload anyway"
 while True:
     try:
         import Constants
         from Utilities import *
         from XDrivetrain import Drivetrain
         from Autonomous import Autonomous, available_autonomous_routines
+        brain.screen.clear_screen()
+        print("Successfully loaded 4 modules")
+        wait(500)
+        brain.screen.clear_screen()
         break
     except ModuleNotFoundError:
-        brain.screen.print("Please insert the library SD card")
+        brain.screen.clear_screen()
+        brain.screen.print("Please insert the library Micro-SD card")
         brain.screen.next_row()
-        wait(100)
+        wait(1000)
 
-print("4 modules loaded successfully")
 
 __title__ = "Vex V5 2024 Competition code"
 __description__ = "Competition Code for VRC: Over-Under 2024-2025"
@@ -39,6 +42,9 @@ __author__ = "Derek Baier"
 __author_email__ = "Derek.m.baier@gmail.com"
 __license__ = "MIT"
 
+terminal = Terminal(brain)
+print = terminal.print
+clear = terminal.clear
 
 if Constants.background_image_path:
     brain.screen.draw_image_from_file(str(Constants.background_image_path), 0, 0)
@@ -100,7 +106,7 @@ def on_autonomous() -> None:
     if not Globals.setup_complete:
         print("[on_autonomous]: setup not complete, can't start autonomous")
         return
-    Autonomous(motors=Motors, drivetrain=drivetrain, _globals=Globals, verbosity=Constants.autonomous_verbosity)
+    Autonomous(brain=brain, motors=Motors, drivetrain=drivetrain, _globals=Globals, verbosity=Constants.autonomous_verbosity)
 
 
 def debug_thread():
@@ -110,6 +116,7 @@ def debug_thread():
             clear()
             print("Position: " + str(drivetrain._odometry.x) + " " + str(drivetrain._odometry.y))
             print("Direction: " + str(drivetrain._odometry.rotation_deg))
+            print("Gyro: " + str(drivetrain._inertial.heading(DEGREES)))
             wait(100)
             if Controllers.primary.buttonA.pressing():
                 drivetrain.reset()
@@ -191,8 +198,8 @@ def select_autonomous() -> None:
         autonomous_index = 0
         Globals.autonomous_task = possible_tasks[autonomous_index]
 
-        clear(Controllers.primary)
-        print(text=("Autonomous: " + Globals.autonomous_task[0]), console=Controllers.primary)
+        Controllers.primary.screen.clear_screen()
+        Controllers.primary.screen.print(("Autonomous: " + Globals.autonomous_task[0]))
         if Controllers.primary.buttonRight.pressing() and autonomous_index < len(possible_tasks):
             autonomous_index += 1
         elif Controllers.primary.buttonLeft.pressing() and autonomous_index > 0:
@@ -208,15 +215,13 @@ if __name__ == "__main__":
     print("Autonomous selected")
     Motors.allWheels.set_stopping(BRAKE)
     Controllers.primary.rumble("-")
-    clear(Controllers.primary)
-    drivetrain = Drivetrain(inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
+    drivetrain = Drivetrain(brain=brain, inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
                             motor_3=Motors.motor_3, motor_4=Motors.motor_4, movement_allowed_error_cm=3,
                             wheel_radius_cm=4.13, track_width_cm=Constants.track_width_cm)
     print("Calibrating Gyro...")
     Sensors.inertial.calibrate()
     while Sensors.inertial.is_calibrating():
         pass
-    clear(Controllers.primary)
     # Set up controller callbacks here to avoid triggering them by pressing buttons during setup
     # Primary controller bindings
     # Controllers.primary.buttonA.pressed(callback)
@@ -224,5 +229,5 @@ if __name__ == "__main__":
     # Controllers.secondary.buttonA.pressed(callback)
     Controllers.primary.buttonA.pressed(debug_thread)
     Globals.setup_complete = True
-    print("Setup complete", console=(brain, Controllers.primary), end="\n")
+    print("Setup complete", end="\n")
     Controllers.primary.rumble(".")
