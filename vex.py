@@ -18,7 +18,7 @@ FORWARD = "FORWARD"
 REVERSE = "REVERSE"
 
 
-def Thread(*args):
+def Thread(*args, **kwargs):
     pass
 
 class Competition:
@@ -52,11 +52,19 @@ class Inertial:
         pass
 
     @staticmethod
+    def rotation(*args):
+        pass
+
+    @staticmethod
     def is_calibrating():
         return False
 
     @staticmethod
     def set_heading(*args):
+        pass
+
+    @staticmethod
+    def set_rotations(*args):
         pass
 
 

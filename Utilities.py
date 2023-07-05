@@ -5,6 +5,7 @@ from vex import *
 class Terminal(object):
     def __init__(self, brain):
         self.brain = brain
+        self.log = Logging("console", "%s")
 
     def clear(self):
         """
@@ -63,58 +64,137 @@ def apply_cubic(value: float, linearity: float) -> float:
     return value ** 3 + linearity * value / (1 + linearity)
 
 
-class PIDController(object):
+class MotorPID(object):
     """
-    Wrap a motor definition in this class to use a custom PID to control its movements ie: my_motor = PIDMotor(Motor(...), kp, kd, t)
+    Wrap a motor definition in this class to use a custom PID to control its movements ie: my_motor = MotorPID(Motor(...), kp, kd, t)
     Waring, this class disables all motor functionality except the following functions:[set_velocity, set_stopping, stop, spin, velocity]
-    Don't worry about calling pid_update, it is done automatically in a new thread unless you specify auto_pid_update as False
     :param motor_object: The motor to apply the PID to
-    :param kp: Kp value for the PID: How quickly to modify the speed if it has not yet reached the desired speed
-    :param kd: Kd value for the PID: Higher values reduce the speed of response and limit overshoot
+    :param kp: Kp value for the PID: How quickly to modify the target value if it has not yet reached the desired value
+    :param ki: Ki value for the PID: Integral gain to reduce steady-state error
+    :param kd: Kd value for the PID: Higher values reduce the response time and limit overshoot
     :param t: Time between PID updates
-    :param auto_pid_update: Whether to automatically update the PID and flush motor values
     """
 
-    def __init__(self, motor_object, kp: float = 0.4, kd: float = 0.05, t: float = 0.01, auto_pid_update=True):
+    def __init__(self, timer: Brain.timer, motor_object, kp: float = 0.4, ki: float = 0.01, kd: float = 0.05, t: float = 0.1) -> None:
         self.motor_object = motor_object
-        self.kp = kp
-        self.kd = kd
-        self.delay = t
-        self.actual_velocity = 0
-        self.error = 0
-        self.derivative = 0
-        self.output = 0
-        self.previous_error = 0
-        self.target_velocity = 0
-        if auto_pid_update:
-            self.pid_thread = Thread(target=self._pid_loop)
+        self.motor_PID = PIDController(timer, kp, ki, kd)
+        self.pid_thread = Thread(self.loop)
+        self.t = t
 
-    def pid_update(self) -> None:
+    def update(self) -> None:
         """
         Update the PID state with the most recent motor and target velocities and send the normalized value to the motor
         """
-        self.actual_velocity = self.motor_object.velocity(PERCENT)
-        self.error = self.target_velocity - self.actual_velocity
-        self.derivative = (self.error - self.previous_error) / self.delay
-        self.output = self.kp * self.error + self.kd * self.derivative
-        self.previous_error = self.error
-        self.motor_object.set_velocities(self.actual_velocity + self.output, PERCENT)
+        self.motor_object.set_velocity(self.motor_PID.update(self.velocity(PERCENT)), PERCENT)
 
-    def _pid_loop(self) -> None:
+    def loop(self) -> None:
         """
-        Used to run the PID in a new thread: updates the values the PID uses and handles applying those updated speed values to the motor
+        Used to run the PID in a new thread:
+         updates the values the PID uses and handles
+          applying those updated unsigned_target_speed values to the motor
         """
         while True:
-            self.pid_update()
-            wait(self.delay, SECONDS)
+            self.update()
+            wait(self.t, SECONDS)
 
     def set_velocity(self, velocity: float) -> None:
         """
-        Set the motors target velocity using the PID
+        Set the motors target velocity using the PID, make sure you run PID_loop in a new thread or this
+        will have no effect
         :param velocity: The new target velocity of the motor
         :type velocity: float
         """
-        self.target_velocity = velocity
+        self.motor_PID.target_value = velocity
+
+    def spin(self, DIRECTION):
+        self.motor_object.spin(DIRECTION)
+
+    def stop(self):
+        self.motor_object.stop()
+
+    def velocity(self, _type):
+        return self.motor_object.velocity(_type)
+
+
+class PIDController(object):
+    """
+    A generalized PID controller implementation.
+    :param kp: Kp value for the PID: How quickly to modify the target value if it has not yet reached the desired value
+    :param ki: Ki value for the PID: Integral gain to reduce steady-state error
+    :param kd: Kd value for the PID: Higher values reduce the response time and limit overshoot
+    """
+
+    def __init__(self, timer: Brain.timer, kp: float = 1, ki: float = 0, kd: float = 0):
+        self._kp = kp
+        self._ki = ki
+        self._kd = kd
+        self.timer = timer
+        self.previous_time = timer.time(MSEC) / 1000
+        self.current_value = 0
+        self._target_value = 0
+        self.error_integral = 0
+        self.previous_error = 0
+        self.control_output = 0
+
+    @property
+    def kp(self):
+        return self._kp
+
+    @kp.setter
+    def kp(self, value):
+        self._kp = value
+
+    @property
+    def ki(self):
+        return self._ki
+
+    @ki.setter
+    def ki(self, value):
+        self._ki = value
+
+    @property
+    def kd(self):
+        return self._kd
+
+    @kd.setter
+    def kd(self, value):
+        self._kd = value
+
+    @property
+    def target_value(self):
+        return self._target_value
+
+    @target_value.setter
+    def target_value(self, value):
+        self._target_value = value
+        self.error_integral = 0
+        self.previous_error = 0
+        self.control_output = 0
+
+    def update(self, current_value):
+        """
+        Update the PID state with the most recent current value and calculate the control output.
+        :param current_value: The current measurement or feedback value
+        :type current_value: float
+        :return: The calculated control output
+        :rtype: float
+        """
+
+        current_time = self.timer.time(MSEC) / 1000
+        delta_time = current_time - self.previous_time
+        self.previous_time = current_time
+
+        delta_time = clamp(delta_time, 0, 1)   # if it has been more than 0.5 seconds since the last calculation, we
+        # don't know where the value is
+
+        current_error = self.target_value - current_value
+        self.error_integral += current_error * delta_time
+        error_derivative = (current_error - self.previous_error) / delta_time
+        self.control_output = (
+            self.kp * current_error + self.ki * self.error_integral + self.kd * error_derivative
+        )
+        self.previous_error = current_error
+        return self.control_output
 
 
 class Logging(object):
@@ -122,17 +202,15 @@ class Logging(object):
     A class that can run multiple logs for different events and store their outputs to the SD card
     """
 
-    def __init__(self, log_name, log_format: str, mode: str = "w"):
+    def __init__(self, log_name, log_format: str):
         """
         Create a new instance of the class
         :param log_name: The name to use for the log, a number preceded by a hyphen "-" will be appended to this name to avoid overwriting old logs
         :type log_name: str
         :param log_format: The format for the log, %s for the passed string, %m for time in milliseconds, %t for time in seconds %n for the passed function name (if supplied, otherwise "None" will be used)
         :type log_format: str
-        :param mode: The mode you want to open the file in
-        :type mode: str
         """
-        self.log_format = log_format
+        self.log_format = str(log_format)
         index_dict = {}
         log_number = 0
         try:
@@ -145,7 +223,7 @@ class Logging(object):
                 log_number = 0
             with open("/Logs/index.json", "wt") as file:
                 file.write(str(index_dict))
-        except (OSError, AttributeError):
+        except (OSError, AttributeError, SyntaxError):
             try:
                 index_dict[str(log_name)] = 0
                 with open("/Logs/index.json", "wt") as file:
@@ -153,10 +231,10 @@ class Logging(object):
             except (OSError, AttributeError):
                 raise RuntimeError("No SD card, can't initialize log: " + str(log_name))
         self.file_name = "/Logs/" + str(log_name) + "-" + str(log_number) + ".log"
-        self.file_object = open(self.file_name, mode)
+        self.file_object = open(self.file_name, "w")
         self.log("Starting log at " + self.file_name, function_name="logging.__init__")
 
-    def log(self, string, function_name=None):
+    def log(self, string: str, function_name: str = ""):
         """
         Send a string to the file, using the log format
         :param string:

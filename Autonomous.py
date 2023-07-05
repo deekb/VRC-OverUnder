@@ -16,7 +16,7 @@ class Autonomous(object):
         self.drivetrain = drivetrain
         self.globals = _globals
         # Start a new log for this autonomous instance, places it in /Logs/ (if available), on the SD card
-        self.autonomous_log_object = Logging(log_format="[%n]:%m:%s\n", mode="wt", log_name="Autonomous")
+        self.autonomous_log_object = Logging(log_format="[%n]:%m:%s\n", log_name="Autonomous")
 
         self.log = self.autonomous_log_object.log
         self.motors.allWheels.set_stopping(BRAKE)

@@ -4,7 +4,7 @@ A highly customizable drivetrain with built-in dynamic course correction
 
 from vex import *
 from Utilities import *
-from Odometry import XDriveDrivetrainOdometry
+from Odometry import TankDriveDrivetrainOdometry
 
 
 class Drivetrain(object):
@@ -17,8 +17,7 @@ class Drivetrain(object):
                  movement_allowed_error_cm: float, wheel_radius_cm: float,
                  track_width_cm: float, motor_lowest_speed: int = 1,
                  driver_control_deadzone: float = 0.1,
-                 driver_control_turn_speed: float = 3, direction_correction_kp: float = 1.4,
-                 direction_correction_ki: float = 0.01, direction_correction_kd: float = 0.01) -> None:
+                 driver_control_turn_speed: float = 3, turn_correction_kp: float = 1.4) -> None:
         """
         Initialize a new drivetrain with the specified properties
         :param inertial: The inertial sensor to use for the drivetrain
@@ -60,7 +59,7 @@ class Drivetrain(object):
         self._motor_lowest_speed = motor_lowest_speed
         self._driver_control_deadzone = driver_control_deadzone
         self.driver_control_turn_speed = driver_control_turn_speed
-        self.rotation_PID = PIDController(brain.timer, direction_correction_kp, direction_correction_ki, direction_correction_kd)
+        self.turn_correction_kp = turn_correction_kp
         self._current_target_heading = 0
         self._current_target_x_cm = 0
         self._current_target_y_cm = 0
@@ -75,8 +74,9 @@ class Drivetrain(object):
         self._motor_3.spin(FORWARD)
         self._motor_4.spin(FORWARD)
 
-        self._odometry = XDriveDrivetrainOdometry(brain, self._motor_1, self._motor_2, self._motor_3, self._motor_4,
-                                                  self._track_width, self._wheel_circumference_cm, gyroscope=self._inertial)
+        self._odometry = TankDriveDrivetrainOdometry(brain, self._motor_1, self._motor_2, self._motor_3, self._motor_4,
+                                                     self._track_width, self._wheel_circumference_cm,
+                                                     gyroscope=self._inertial)
         self._odometry_thread = Thread(self._odometry.auto_update_velocities)
 
     def move_to_position(self, target_position, maximum_speed: float = 0.35) -> None:
@@ -88,38 +88,39 @@ class Drivetrain(object):
         """
         self._current_target_x_cm, self._current_target_y_cm = target_position
         start_direction_radians = self._odometry.rotation_rad
-        self.rotation_PID.target_value = start_direction_radians
-        while not check_position_within_tolerance(self._odometry.position, target_position, self._movement_allowed_error):
-            direction_rad = math.atan2(self._current_target_y_cm - self._odometry.y, self._current_target_x_cm - self._odometry.x)
-            distance_cm = math.sqrt(((self._current_target_x_cm - self._odometry.x) ** 2 + (self._current_target_y_cm - self._odometry.y) ** 2))
-            spin = self.rotation_PID.update(self._odometry.rotation_rad)
+        while not check_position_within_tolerance(self._odometry.position, target_position,
+                                                  self._movement_allowed_error):
+            direction_rad = math.atan2(self._current_target_y_cm - self._odometry.y,
+                                       self._current_target_x_cm - self._odometry.x)
+            distance_cm = math.sqrt(((self._current_target_x_cm - self._odometry.x) ** 2 + (
+                        self._current_target_y_cm - self._odometry.y) ** 2))
+            spin = (self._odometry.rotation_rad - start_direction_radians) * self.turn_correction_kp
             self.move_headless(direction_rad, min(distance_cm / 10, maximum_speed), spin)
 
     def follow_path(self, point_list):
         for point in point_list:
             self.move_to_position(point)
 
-    def move(self, direction, speed, spin) -> None:
+    def move(self, left_velocity, right_velocity) -> None:
         """
         Move the drivetrain towards a vector
-        :param: direction
+        :param left_velocity: The speed to move the left side of the robot
+        :param right_velocity: The speed to move the right side of the robot
         """
-        self._motor_1.set_velocity((self.calculate_wheel_power(direction, clamp(speed, 0, 1), math.radians(-45)) + spin) * 100)
-        self._motor_2.set_velocity((self.calculate_wheel_power(direction, clamp(speed, 0, 1), math.radians(45)) + spin) * 100)
-        self._motor_3.set_velocity((self.calculate_wheel_power(direction, clamp(speed, 0, 1), math.radians(135)) + spin) * 100)
-        self._motor_4.set_velocity((self.calculate_wheel_power(direction, clamp(speed, 0, 1), math.radians(225)) + spin) * 100)
+        self._motor_1.set_velocity(
+            clamp(left_velocity, 0, 1) * 100)
+        self._motor_2.set_velocity(
+            clamp(left_velocity, 0, 1) * 100)
+        self._motor_3.set_velocity(
+            clamp(right_velocity, 0, 1) * 100)
+        self._motor_4.set_velocity(
+            clamp(right_velocity, 0, 1) * 100)
 
-    def move_headless(self, direction, magnitude, spin):
-        direction -= self._odometry.rotation_rad
-        self.move(direction, magnitude, spin)
-
-    def move_with_controller(self, controller: Controller, headless: bool = False) -> None:
+    def move_with_controller(self, controller: Controller) -> None:
         """
         Move using the controller input
         :param controller: The controller to get input from
         :type controller: Controller
-        :param headless: Whether to move the robt in headless mode
-        :type headless: bool
         """
         self.current_move_with_controller_execution_time = self.time.time(SECONDS)
         if self.last_move_with_controller_execution_time is not None:
@@ -141,13 +142,9 @@ class Drivetrain(object):
 
         magnitude = apply_deadzone(magnitude, self._driver_control_deadzone, 1)
 
-        self.rotation_PID.target_value = self.target_heading_rad
-        spin = self.rotation_PID.update(self._odometry.rotation_rad)
+        spin = (self._odometry.rotation_rad - self.target_heading_rad) * self.turn_correction_kp
 
-        if headless:
-            self.move_headless(direction, magnitude, spin)
-        else:
-            self.move(direction, magnitude, spin)
+        self.move(left_velocity, right_velocity)
 
         self.last_move_with_controller_execution_time = self.current_move_with_controller_execution_time
 

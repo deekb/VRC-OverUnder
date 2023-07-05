@@ -25,12 +25,15 @@ while True:
         wait(500)
         brain.screen.clear_screen()
         break
-    except ModuleNotFoundError:
+    except ImportError:
+        Constants, Drivetrain, Autonomous, available_autonomous_routines = [None for _ in range(4)]
         brain.screen.clear_screen()
+        brain.screen.set_cursor(1, 1)
         brain.screen.print("Please insert the library Micro-SD card")
-        brain.screen.next_row()
         wait(1000)
 
+brain.screen.clear_screen()
+brain.screen.set_cursor(1, 1)
 
 __title__ = "Vex V5 2024 Competition code"
 __description__ = "Competition Code for VRC: Over-Under 2024-2025"
@@ -94,7 +97,7 @@ class Globals:
     autonomous_threads = []  # This is a list of the threads running concurrently during autonomous so that they may be tracked and stopped at the appropriate time
     driver_control_threads = []  # Same thing but for driver control
     setup_complete = False  # Whether the pre-match selections on the controller have been completed
-    pause_driver_control = False  # This can be used for autonomous functions during driver control, for example if we want to turn towards a goal when a button is pressed
+    pause_driver_control = False  # This can be used for autonomous functions during driver control, for example, if we want to turn towards a goal when a button is pressed
     autonomous_task = None  # The task to perform during autonomous (should be set by the setup function)
 
 
@@ -116,19 +119,37 @@ def debug_thread():
             clear()
             print("Position: " + str(drivetrain._odometry.x) + " " + str(drivetrain._odometry.y))
             print("Direction: " + str(drivetrain._odometry.rotation_deg))
-            print("Gyro: " + str(drivetrain._inertial.heading(DEGREES)))
             wait(100)
             if Controllers.primary.buttonA.pressing():
                 drivetrain.reset()
             if Controllers.primary.buttonB.pressing():
-                drivetrain.move_to_position((0, 0))
+                Globals.pause_driver_control = True
+                drivetrain.follow_path([(0, 0), (0, 121.92), (121.92, 121.92), (121.92, 0), (0, 0)])
+                # drivetrain.move_to_position((0, 0))
+                Globals.pause_driver_control = False
+
+
+def rotate_to_0_degrees():
+    drivetrain.target_heading_deg = 0
+
+
+def rotate_to_90_degrees():
+    drivetrain.target_heading_deg = 90
+
+
+def rotate_to_180_degrees():
+    drivetrain.target_heading_deg = 180
+
+
+def rotate_to_270_degrees():
+    drivetrain.target_heading_deg = 270
 
 
 def on_driver() -> None:
     """
     This is the function designated to run when the driver control portion of the program is triggered
     """
-    # Wait for setup to be complete
+    # Wait for setup to finish
     print("[on_driver]: Waiting for setup...")
     while not Globals.setup_complete:
         wait(5)
@@ -216,7 +237,7 @@ if __name__ == "__main__":
     Motors.allWheels.set_stopping(BRAKE)
     Controllers.primary.rumble("-")
     drivetrain = Drivetrain(brain=brain, inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
-                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, movement_allowed_error_cm=3,
+                            motor_3=Motors.motor_3, motor_4=Motors.motor_4, movement_allowed_error_cm=2,
                             wheel_radius_cm=4.13, track_width_cm=Constants.track_width_cm)
     print("Calibrating Gyro...")
     Sensors.inertial.calibrate()
@@ -227,7 +248,10 @@ if __name__ == "__main__":
     # Controllers.primary.buttonA.pressed(callback)
     # Secondary controller bindings
     # Controllers.secondary.buttonA.pressed(callback)
-    Controllers.primary.buttonA.pressed(debug_thread)
+    Controllers.primary.buttonL1.pressed(rotate_to_0_degrees)
+    Controllers.primary.buttonL2.pressed(rotate_to_90_degrees)
+    Controllers.primary.buttonR1.pressed(rotate_to_180_degrees)
+    Controllers.primary.buttonR1.pressed(rotate_to_270_degrees)
     Globals.setup_complete = True
     print("Setup complete", end="\n")
     Controllers.primary.rumble(".")
