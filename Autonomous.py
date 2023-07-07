@@ -21,12 +21,13 @@ class Autonomous(object):
         self.log = self.autonomous_log_object.log
         self.motors.allWheels.set_stopping(BRAKE)
         self.drivetrain.reset()
-        if self.globals.autonomous_task[0] not in available_autonomous_routines:
+        if self.globals.autonomous_task[0] not in [x[0] for x in available_autonomous_routines]:
             self.log("Can't find autonomous routine " + _globals.autonomous_task[0])
             raise RuntimeError("Can't find autonomous")
         self.log("Autonomous:STATUS: Start")
         self.log("Autonomous:STATUS: Running predefined autonomous routine \"" + _globals.autonomous_task[0] + "\"")
-        self.globals.autonomous_task[1]()
+        self.print(self.globals.autonomous_task[1])
+        self.globals.autonomous_task[1](self)
         self.autonomous_log_object.exit()
         print("Autonomous Complete")
 
@@ -36,18 +37,17 @@ class Autonomous(object):
             if self.verbosity > 1:
                 self.autonomous_log_object.log(string)
 
-    def skills(self):
-        def __init__(self) -> None:
-            self.test = "g"
-            self.log("Starting skills")
-            wait(1000)
-            self.log("Done")
+    def skills(_self):
+        _self.log("Starting skills")
+        _self.drivetrain.reset()
+        _self.drivetrain.follow_path([(0, 0), (0, 121.92), (121.92, 121.92), (121.92, 0), (0, 0)])
+        _self.drivetrain.move(0, 0, 0)
+        _self.log("Done")
 
-    def nothing(self):
-        def __init__(self) -> None:
-            self.log("Starting nothing")
-            self.log("Done")
-            self.log("That was easy")
+    def nothing(_self):
+        _self.log("Starting nothing")
+        _self.log("Done")
+        _self.log("That was easy")
 
 
 available_autonomous_routines = [("Skills", Autonomous.skills), ("Nothing", Autonomous.nothing)]

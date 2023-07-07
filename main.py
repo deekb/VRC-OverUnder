@@ -11,26 +11,26 @@ from vex import *
 
 brain = Brain()
 
-
 # Make sure to copy the required modules to the Micro-SD card in the Micro-SD slot on your VEX brain
 # if Vex-code still doesn't want to upload click "Upload anyway"
 while True:
     try:
-        import Constants
-        from Utilities import *
-        from XDrivetrain import Drivetrain
-        from Autonomous import Autonomous, available_autonomous_routines
+        import Constants  # noqa: suppress pycharm module not found message as the program will continue to import them ntil they are loaded
+        from Utilities import Terminal, apply_deadzone, check_position_within_tolerance, apply_cubic, MotorPID, clamp, PIDController, Logging  # noqa: reason above ^^
+        from XDrivetrain import Drivetrain  # noqa: reason above ^^
+        from Autonomous import Autonomous, available_autonomous_routines  # noqa: reason above ^^
+
         brain.screen.clear_screen()
         print("Successfully loaded 4 modules")
         wait(500)
         brain.screen.clear_screen()
         break
     except ImportError:
-        Constants, Drivetrain, Autonomous, available_autonomous_routines = [None for _ in range(4)]
         brain.screen.clear_screen()
         brain.screen.set_cursor(1, 1)
         brain.screen.print("Please insert the library Micro-SD card")
         wait(1000)
+
 
 brain.screen.clear_screen()
 brain.screen.set_cursor(1, 1)
@@ -97,7 +97,8 @@ class Globals:
     autonomous_threads = []  # This is a list of the threads running concurrently during autonomous so that they may be tracked and stopped at the appropriate time
     driver_control_threads = []  # Same thing but for driver control
     setup_complete = False  # Whether the pre-match selections on the controller have been completed
-    pause_driver_control = False  # This can be used for autonomous functions during driver control, for example, if we want to turn towards a goal when a button is pressed
+    pause_driver_control = False  # This can be used for autonomous functions during drier control, for example,
+    # if we want to turn towards a goal when a button is pressed
     autonomous_task = None  # The task to perform during autonomous (should be set by the setup function)
 
 
@@ -109,7 +110,8 @@ def on_autonomous() -> None:
     if not Globals.setup_complete:
         print("[on_autonomous]: setup not complete, can't start autonomous")
         return
-    Autonomous(brain=brain, motors=Motors, drivetrain=drivetrain, _globals=Globals, verbosity=Constants.autonomous_verbosity)
+    Autonomous(brain=brain, motors=Motors, drivetrain=drivetrain, _globals=Globals,
+               verbosity=Constants.autonomous_verbosity)
 
 
 def debug_thread():
@@ -117,8 +119,8 @@ def debug_thread():
         if "drivetrain" in globals():
             # For testing, ignore the protected member error!
             clear()
-            print("Position: " + str(drivetrain._odometry.x) + " " + str(drivetrain._odometry.y))
-            print("Direction: " + str(drivetrain._odometry.rotation_deg))
+            print("Position: " + str(drivetrain._odometry.x) + " " + str(drivetrain._odometry.y))  # noqa
+            print("Direction: " + str(drivetrain._odometry.rotation_deg))  # noqa
             wait(100)
             if Controllers.primary.buttonA.pressing():
                 drivetrain.reset()
@@ -162,7 +164,6 @@ def on_driver() -> None:
             wait(10)
 
 
-# <editor-fold desc="Competition State Handlers">
 def autonomous_handler() -> None:
     """
     Coordinate when to run the autonomous function(s)
@@ -194,9 +195,6 @@ def driver_handler() -> None:
 competition = Competition(driver_handler, autonomous_handler)
 
 
-# </editor-fold>
-
-
 def select_autonomous() -> None:
     """
     Selects which autonomous to execute using the controller
@@ -216,10 +214,10 @@ def select_autonomous() -> None:
                        Controllers.primary.buttonA.pressing(),
                        Controllers.primary.buttonB.pressing())):
             wait(5)
-        autonomous_index = 0
         Globals.autonomous_task = possible_tasks[autonomous_index]
 
         Controllers.primary.screen.clear_screen()
+        Controllers.primary.screen.set_cursor(1, 1)
         Controllers.primary.screen.print(("Autonomous: " + Globals.autonomous_task[0]))
         if Controllers.primary.buttonRight.pressing() and autonomous_index < len(possible_tasks):
             autonomous_index += 1
@@ -238,7 +236,9 @@ if __name__ == "__main__":
     Controllers.primary.rumble("-")
     drivetrain = Drivetrain(brain=brain, inertial=Sensors.inertial, motor_1=Motors.motor_1, motor_2=Motors.motor_2,
                             motor_3=Motors.motor_3, motor_4=Motors.motor_4, movement_allowed_error_cm=2,
-                            wheel_radius_cm=4.13, track_width_cm=Constants.track_width_cm)
+                            wheel_radius_cm=4.13, track_width_cm=Constants.track_width_cm,
+                            driver_control_turn_speed=3.5, direction_correction_kp=1.8, direction_correction_ki=1.5,
+                            direction_correction_kd=0.001)
     print("Calibrating Gyro...")
     Sensors.inertial.calibrate()
     while Sensors.inertial.is_calibrating():

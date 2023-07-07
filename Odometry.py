@@ -100,10 +100,11 @@ class XDriveDrivetrainOdometry:
                                              self._wheel_3_speed_distance_per_second +
                                              self._wheel_4_speed_distance_per_second) / self._track_width) / 2) * delta_time
 
-        wheel_pair_1_and_3_speed_delta_y = math.cos(math.pi / 4 + self._current_rotation_rad) * (
+        wheel_pair_1_and_3_speed_delta_y = math.cos(math.radians(45) + self._current_rotation_rad) * (
                 self._wheel_1_speed_distance_per_second - self._wheel_3_speed_distance_per_second) / 2
-        wheel_pair_1_and_3_speed_delta_x = math.sin(math.pi / 4 + self._current_rotation_rad) * (
+        wheel_pair_1_and_3_speed_delta_x = math.sin(math.radians(45) + self._current_rotation_rad) * (
                 self._wheel_1_speed_distance_per_second - self._wheel_3_speed_distance_per_second) / 2
+
         wheel_pair_2_and_4_speed_delta_y = math.cos(-math.pi / 4 + self._current_rotation_rad) * (
                 self._wheel_2_speed_distance_per_second - self._wheel_4_speed_distance_per_second) / 2
         wheel_pair_2_and_4_speed_delta_x = math.sin(-math.pi / 4 + self._current_rotation_rad) * (

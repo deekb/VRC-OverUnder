@@ -17,8 +17,8 @@ class Drivetrain(object):
                  movement_allowed_error_cm: float, wheel_radius_cm: float,
                  track_width_cm: float, motor_lowest_speed: int = 1,
                  driver_control_deadzone: float = 0.1,
-                 driver_control_turn_speed: float = 3, direction_correction_kp: float = 1.4,
-                 direction_correction_ki: float = 0.01, direction_correction_kd: float = 0.01) -> None:
+                 driver_control_turn_speed: float = 3, direction_correction_kp: float = 1,
+                 direction_correction_ki: float = 0, direction_correction_kd: float = 0) -> None:
         """
         Initialize a new drivetrain with the specified properties
         :param inertial: The inertial sensor to use for the drivetrain
@@ -92,7 +92,7 @@ class Drivetrain(object):
         while not check_position_within_tolerance(self._odometry.position, target_position, self._movement_allowed_error):
             direction_rad = math.atan2(self._current_target_y_cm - self._odometry.y, self._current_target_x_cm - self._odometry.x)
             distance_cm = math.sqrt(((self._current_target_x_cm - self._odometry.x) ** 2 + (self._current_target_y_cm - self._odometry.y) ** 2))
-            spin = self.rotation_PID.update(self._odometry.rotation_rad)
+            spin = -self.rotation_PID.update(self._odometry.rotation_rad)
             self.move_headless(direction_rad, min(distance_cm / 10, maximum_speed), spin)
 
     def follow_path(self, point_list):
@@ -142,7 +142,7 @@ class Drivetrain(object):
         magnitude = apply_deadzone(magnitude, self._driver_control_deadzone, 1)
 
         self.rotation_PID.target_value = self.target_heading_rad
-        spin = self.rotation_PID.update(self._odometry.rotation_rad)
+        spin = -self.rotation_PID.update(self._odometry.rotation_rad)
 
         if headless:
             self.move_headless(direction, magnitude, spin)

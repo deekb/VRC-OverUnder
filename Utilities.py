@@ -119,12 +119,17 @@ class MotorPID(object):
 class PIDController(object):
     """
     A generalized PID controller implementation.
-    :param kp: Kp value for the PID: How quickly to modify the target value if it has not yet reached the desired value
-    :param ki: Ki value for the PID: Integral gain to reduce steady-state error
-    :param kd: Kd value for the PID: Higher values reduce the response time and limit overshoot
     """
 
     def __init__(self, timer: Brain.timer, kp: float = 1, ki: float = 0, kd: float = 0):
+        """
+        Initializes a PIDController instance.
+        :param timer: The timer object used to measure time.
+        :param kp: Kp value for the PID.
+        :param ki: Ki value for the PID.
+        :param kd: Kd value for the PID.
+        """
+
         self._kp = kp
         self._ki = ki
         self._kd = kd
@@ -137,55 +142,84 @@ class PIDController(object):
         self.control_output = 0
 
     @property
-    def kp(self):
+    def kp(self) -> float:
+        """
+        Getter for the Kp value of the PID.
+        :return: The Kp value.
+        """
         return self._kp
 
     @kp.setter
-    def kp(self, value):
+    def kp(self, value: float):
+        """
+        Setter for the Kp value of the PID.
+        :param value: The new Kp value.
+        """
         self._kp = value
 
     @property
-    def ki(self):
+    def ki(self) -> float:
+        """
+        Getter for the Ki value of the PID.
+        :return: The Ki value.
+        """
         return self._ki
 
     @ki.setter
-    def ki(self, value):
+    def ki(self, value: float):
+        """
+        Setter for the Ki value of the PID.
+        :param value: The new Ki value.
+        """
         self._ki = value
 
     @property
-    def kd(self):
+    def kd(self) -> float:
+        """
+        Getter for the Kd value of the PID.
+        :return: The Kd value.
+        """
         return self._kd
 
     @kd.setter
-    def kd(self, value):
+    def kd(self, value: float):
+        """
+        Setter for the Kd value of the PID.
+        :param value: The new Kd value.
+        """
         self._kd = value
 
     @property
-    def target_value(self):
+    def target_value(self) -> float:
+        """
+        Getter for the target value of the PID.
+        :return: The target value.
+        """
         return self._target_value
 
     @target_value.setter
-    def target_value(self, value):
+    def target_value(self, value: float):
+        """
+        Setter for the target value of the PID.
+        :param value: The new target value.
+        """
         self._target_value = value
         self.error_integral = 0
-        self.previous_error = 0
+        self.previous_error = self._target_value - self.current_value
         self.control_output = 0
 
-    def update(self, current_value):
+    def update(self, current_value: float) -> float:
         """
         Update the PID state with the most recent current value and calculate the control output.
-        :param current_value: The current measurement or feedback value
-        :type current_value: float
-        :return: The calculated control output
-        :rtype: float
+        :param current_value: The current measurement or feedback value.
+        :return: The calculated control output.
         """
 
         current_time = self.timer.time(MSEC) / 1000
         delta_time = current_time - self.previous_time
         self.previous_time = current_time
 
-        delta_time = clamp(delta_time, 0, 1)   # if it has been more than 0.5 seconds since the last calculation, we
-        # don't know where the value is
+        delta_time = clamp(delta_time, 0.00001, 1)   # Clamp delta_time within the range [0.00001, 1]
 
         current_error = self.target_value - current_value
         self.error_integral += current_error * delta_time
@@ -253,7 +287,17 @@ class Logging(object):
         self.file_object.close()
 
 
-def clamp(value: float, lower_limit=None, upper_limit=None):
+def clamp(value: float, lower_limit: float = None, upper_limit: float = None) -> float:
+    """
+    Restricts a value within a specified range.
+    :param value: The value to be clamped.
+    :param lower_limit: The lower limit of the range.
+        If None, no lower limit is applied.
+    :param upper_limit: The upper limit of the range.
+        If None, no upper limit is applied.
+    :return: The clamped value.
+    """
+
     if lower_limit is None or upper_limit is None:
         return value
     if lower_limit is not None:
