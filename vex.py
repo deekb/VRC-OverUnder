@@ -21,6 +21,7 @@ REVERSE = "REVERSE"
 def Thread(*args, **kwargs):
     pass
 
+
 class Competition:
     def __init__(self, *args):
         pass
@@ -64,7 +65,7 @@ class Inertial:
         pass
 
     @staticmethod
-    def set_rotations(*args):
+    def set_rotation(*args):
         pass
 
 
@@ -72,6 +73,22 @@ class Controller:
     def __init__(self, port):
         self.port = port
         pass
+
+    class buttonL1:
+        def pressed(*args):
+            pass
+
+    class buttonL2:
+        def pressed(*args):
+            pass
+
+    class buttonR1:
+        def pressed(*args):
+            pass
+
+    class buttonR2:
+        def pressed(*args):
+            pass
 
     class screen:
         @staticmethod

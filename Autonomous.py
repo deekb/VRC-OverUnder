@@ -5,9 +5,8 @@ class Autonomous(object):
     """
     This class is used to manage the execution of an autonomous routine
     """
-    def __init__(self, brain, motors, drivetrain, _globals, verbosity) -> None:
-        self.time = brain.timer
-        self.terminal = Terminal(brain)
+    def __init__(self, terminal, motors, drivetrain, _globals, verbosity) -> None:
+        self.terminal = terminal
         self.print = self.terminal.print
         self.clear = self.terminal.clear
 
@@ -37,14 +36,14 @@ class Autonomous(object):
             if self.verbosity > 1:
                 self.autonomous_log_object.log(string)
 
-    def skills(_self):
+    def skills(_self):  # noqa
         _self.log("Starting skills")
         _self.drivetrain.reset()
         _self.drivetrain.follow_path([(0, 0), (0, 121.92), (121.92, 121.92), (121.92, 0), (0, 0)])
         _self.drivetrain.move(0, 0, 0)
         _self.log("Done")
 
-    def nothing(_self):
+    def nothing(_self):  # noqa
         _self.log("Starting nothing")
         _self.log("Done")
         _self.log("That was easy")

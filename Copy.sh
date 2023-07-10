@@ -7,9 +7,9 @@ while [ -L "$SOURCE" ]; do
 done
 DIR=$( cd -P "$( dirname "$SOURCE" )" > /dev/null 2>&1 && pwd )
 
-rm -r /media/$USER/VEX_V5/*
+rm -r /media/"$USER"/VEX_V5/*
 
-cp "$DIR/Autonomous.py" "$DIR/Constants.py" "$DIR/Odometry.py" "$DIR/Utilities.py" "$DIR/XDrivetrain.py" "/media/$USER/VEX_V5/"
+cp "$DIR/Autonomous.py" "$DIR/Constants.py" "$DIR/XOdometry.py" "$DIR/TankOdometry.py" "$DIR/Utilities.py" "$DIR/XDrivetrain.py" "$DIR/TankDrivetrain.py" "/media/$USER/VEX_V5/"
 
-mkdir /media/$USER/VEX_V5/Logs
-umount /media/$USER/VEX_V5/
+mkdir /media/"$USER"/VEX_V5/Logs
+umount /media/"$USER"/VEX_V5/
