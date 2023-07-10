@@ -20,7 +20,7 @@
 
 Documentation
 -------------
-* `main`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/Main.md)
+* `main`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/main.md)
 * `XDrivetrain`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/XDrivetrain.md)
 * `TankDrivetrain`: **On the way**
 * `XOdometry`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/XOdometry.md)
