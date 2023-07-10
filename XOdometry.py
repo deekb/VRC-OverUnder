@@ -256,6 +256,9 @@ class Odometry:
         self._auto_update = value
         if self._auto_update:
             if not self._auto_update_thread.isrunning():
+                self._previousTime = self.timer.time(MSEC) / 1000  # Set the last update time to now
+                # (avoids situations where delta_time is extremely high
+                # after pausing auto_update_velocities for long periods of time)
                 self._auto_update_thread = Thread(self._auto_update)
         else:
             self._auto_update_thread.stop()
@@ -265,7 +268,7 @@ class Odometry:
         Used internally to constantly update the wheel states, do not call from outside this class
         """
         while True:
-            if self.auto_update:
+            if self._auto_update:
                 self.update_states(self.timer.time(MSEC) / 1000)
                 self.set_velocities(self._motor_1.velocity(), self._motor_2.velocity(), self._motor_3.velocity(),
                                     self._motor_4.velocity())
