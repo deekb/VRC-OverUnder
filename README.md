@@ -21,7 +21,8 @@
 Documentation
 -------------
 * `main`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/main.md)
+* `Utilities`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/Utilities.md)
 * `XDrivetrain`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/XDrivetrain.md)
 * `TankDrivetrain`: **On the way**
-* `XOdometry`: [Documentation](https://github.com/deekb/VRC-OverUnder/blob/main/XOdometry.md)
+* `XOdometry`: **On the way**
 * `TankOdometry`: **On the way**
