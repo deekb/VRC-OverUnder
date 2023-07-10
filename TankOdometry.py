@@ -20,7 +20,7 @@ Module dependencies:
 - Utilities
 
 Classes:
-- Odometry: A class for tracking the position and rotation of an X-Drive robot based on wheel speeds.
+- Odometry: A class for tracking the position and rotation of a tank drive robot based on wheel speeds.
     - __init__(self, brain, motor_1, motor_2, motor_3, motor_4, track_width_cm, wheel_circumference_cm,
     starting_location=(0, 0, 0), auto_update=True, gyroscope=False): Constructor method.
     - reset(self): Reset the robot's position and rotation.
@@ -33,9 +33,6 @@ Classes:
     - rotation_rad: Property to get or set the robot's current rotation in radians.
     - position: Property to get or set the robot's current (x, y) position.
     - auto_update: Property to get or set the odometry's auto-update state.
-    - auto_update_velocities(self): Internal method for continuously updating the wheel states.
-
-Author: derek.m.baier@gmail.com
 """
 
 
@@ -43,13 +40,14 @@ from Utilities import *
 
 
 class Odometry:
-    # noinspection GrazieInspection
     def __init__(self, brain, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float,
                  wheel_circumference_cm: float, starting_location: tuple = (0, 0, 0), auto_update: bool = True,
                  gyroscope: Inertial = False):
         """
         A class for tracking the robot's position and rotation based on an initial position and a constant stream of motor velocities
+
         This implementation only works on Tank drive, but the concept is similar to the X-drive implementation
+
         :param starting_location: The initial position for the robot (x_position, y_position, heading_in_radians) defaults to (0, 0, 0)
         :param track_width_cm: The parallel distance in centimeters between the centers of the wheels (Your drivetrain is a square? RIGHT!)
         :param wheel_circumference_cm: The circumference of the wheels, used to calculate the distance each wheel has travelled
@@ -86,7 +84,7 @@ class Odometry:
         self._auto_update = auto_update
         self._gyroscope = gyroscope
         if self._auto_update:
-            self._auto_update_thread = Thread(self.auto_update_velocities)
+            self._auto_update_thread = Thread(self._auto_update_velocities)
 
     def reset(self) -> None:
         self._x_position = 0
@@ -103,15 +101,8 @@ class Odometry:
     def set_velocities(self, motor_1_rpm: float = None, motor_2_rpm: float = None, motor_3_rpm: float = None,
                        motor_4_rpm: float = None) -> None:
         """
-        Drivetrain motors:
-        //---------------\\
-        ||1             2||
-        ||               ||
-        || Forward  >    ||
-        ||               ||
-        ||4             3||
-        \\---------------//
         Updates the algorithm with the current wheel speeds (speeds are in RPM)
+
         :param motor_1_rpm: Motor 1's speed
         :param motor_2_rpm: Motor 2's speed
         :param motor_3_rpm: Motor 3's speed
@@ -251,19 +242,20 @@ class Odometry:
     def auto_update(self, value) -> None:
         """
         Set the odometry's auto-update state
+
         :param value: The new state
         """
         self._auto_update = value
         if self._auto_update:
             if not self._auto_update_thread.isrunning():
                 self._previousTime = self.timer.time(MSEC) / 1000  # Set the last update time to now
-                # (avoids situations where delta_time is extremely high
-                # after pausing auto_update_velocities for long periods of time)
+                # avoids situations where delta_time is extremely high
+                # after pausing auto_update_velocities for long periods of time
                 self._auto_update_thread = Thread(self._auto_update)
         else:
             self._auto_update_thread.stop()
 
-    def auto_update_velocities(self) -> None:
+    def _auto_update_velocities(self) -> None:
         """
         Used internally to constantly update the wheel states, do not call from outside this class
         """

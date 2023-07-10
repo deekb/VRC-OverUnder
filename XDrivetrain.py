@@ -45,8 +45,8 @@ from Utilities import *
 from XOdometry import Odometry
 from Constants import ControllerAxis
 
-X_AXIS = ControllerAxis.x_axis
-Y_AXIS = ControllerAxis.y_axis
+x_axis = ControllerAxis.x_axis
+y_axis = ControllerAxis.y_axis
 
 
 class Drivetrain(object):
@@ -117,8 +117,7 @@ class Drivetrain(object):
         self._motor_4.spin(FORWARD)
 
         self._odometry = Odometry(brain, self._motor_1, self._motor_2, self._motor_3, self._motor_4,
-                                  self._track_width, self._wheel_circumference_cm, gyroscope=self._inertial, wheel_rotation_offset_rad=(-math.pi/4))
-        self._odometry_thread = Thread(self._odometry.auto_update_velocities)
+                                  self._track_width, self._wheel_circumference_cm, gyroscope=self._inertial, wheel_rotation_offset_rad=wheel_rotation_offset_rad)
 
     def move_to_position(self, target_position, maximum_speed: float = 0.35) -> None:
         """
@@ -174,12 +173,12 @@ class Drivetrain(object):
             delta_time = self.current_move_with_controller_execution_time - self.last_move_with_controller_execution_time
         else:
             delta_time = 0
-        left_stick = {X_AXIS: controller.axis4.position, Y_AXIS: controller.axis3.position}
-        right_stick = {X_AXIS: controller.axis1.position, Y_AXIS: controller.axis2.position}
+        left_stick = {x_axis: controller.axis4.position, y_axis: controller.axis3.position}
+        right_stick = {x_axis: controller.axis1.position, y_axis: controller.axis2.position}
 
-        left_x = left_stick[X_AXIS]() / 100
-        left_y = left_stick[Y_AXIS]() / 100
-        right_x = right_stick[X_AXIS]() / 100
+        left_x = left_stick[x_axis]() / 100
+        left_y = left_stick[y_axis]() / 100
+        right_x = right_stick[x_axis]() / 100
 
         direction = math.atan2(left_y, left_x)
 

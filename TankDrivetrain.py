@@ -40,6 +40,10 @@ Modified: Friday, July 7, 2023
 
 from Utilities import *
 from TankOdometry import Odometry
+from Constants import ControllerAxis
+
+x_axis = ControllerAxis.x_axis
+y_axis = ControllerAxis.y_axis
 
 
 class Drivetrain(object):
@@ -115,7 +119,7 @@ class Drivetrain(object):
         self._odometry = Odometry(brain, self._motor_1, self._motor_2, self._motor_3, self._motor_4,
                                   self._track_width, self._wheel_circumference_cm,
                                   gyroscope=self._inertial)
-        self._odometry_thread = Thread(self._odometry.auto_update_velocities)
+        self._odometry_thread = Thread(self._odometry._auto_update_velocities)
 
     def move_to_position(self, target_position, maximum_speed: float = 0.35) -> None:
         """
@@ -164,11 +168,11 @@ class Drivetrain(object):
         :param controller: The controller to pull input from
         :type controller: Controller
         """
-        left_stick = {"x": controller.axis4.position, "y": controller.axis3.position}
-        right_stick = {"x": controller.axis1.position, "y": controller.axis2.position}
+        left_stick = {x_axis: controller.axis4.position, y_axis: controller.axis3.position}
+        right_stick = {x_axis: controller.axis1.position, y_axis: controller.axis2.position}
 
-        left_y = left_stick["y"]() / 100
-        right_y = left_stick["y"]() / 100
+        left_y = left_stick[y_axis]() / 100
+        right_y = right_stick[y_axis]() / 100
 
         speed = (left_y + right_y) / 2
         spin = left_y - right_y

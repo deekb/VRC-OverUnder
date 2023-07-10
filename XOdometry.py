@@ -33,9 +33,6 @@ Classes:
     - rotation_rad: Property to get or set the robot's current rotation in radians.
     - position: Property to get or set the robot's current (x, y) position.
     - auto_update: Property to get or set the odometry's auto-update state.
-    - auto_update_velocities(self): Internal method for continuously updating the wheel states.
-
-Author: derek.m.baier@gmail.com
 """
 
 
@@ -43,7 +40,6 @@ from Utilities import *
 
 
 class Odometry:
-    # noinspection GrazieInspection
     def __init__(self, brain, motor_1: Motor, motor_2: Motor, motor_3: Motor, motor_4: Motor, track_width_cm: float,
                  wheel_circumference_cm: float, starting_location: tuple = (0, 0, 0), auto_update: bool = True,
                  gyroscope: Inertial = False, wheel_rotation_offset_rad: float = 0):
@@ -86,7 +82,7 @@ class Odometry:
         self._auto_update = auto_update
         self._gyroscope = gyroscope
         if self._auto_update:
-            self._auto_update_thread = Thread(self.auto_update_velocities)
+            self._auto_update_thread = Thread(self._auto_update_velocities)
 
     def reset(self) -> None:
         self._x_position = 0
@@ -257,13 +253,13 @@ class Odometry:
         if self._auto_update:
             if not self._auto_update_thread.isrunning():
                 self._previousTime = self.timer.time(MSEC) / 1000  # Set the last update time to now
-                # (avoids situations where delta_time is extremely high
-                # after pausing auto_update_velocities for long periods of time)
+                # avoids situations where delta_time is extremely high
+                # after pausing auto_update_velocities for long periods of time
                 self._auto_update_thread = Thread(self._auto_update)
         else:
             self._auto_update_thread.stop()
 
-    def auto_update_velocities(self) -> None:
+    def _auto_update_velocities(self) -> None:
         """
         Used internally to constantly update the wheel states, do not call from outside this class
         """
